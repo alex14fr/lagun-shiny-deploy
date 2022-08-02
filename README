@@ -20,7 +20,7 @@ If you use a proper container runtime (recommended) you can run
    $ ./03_mkroot
 since /dev will be populated by your runtime anyway.
 
-The included Dockerfile can be used to create a container from the built rootfs.tar.xz (available at <RUN wget https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>).
+The included Dockerfile can be used to create a container from the built rootfs.tar.xz (available at <https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>).
 
 Author : Alexandre Janon <alexandre . janon at u-psud . fr>
 
