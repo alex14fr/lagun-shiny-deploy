@@ -1,0 +1,78 @@
+#!/bin/sh
+set -x
+ALPINEVER=v3.16
+RVER=4.2.1
+RMAJOR=$(echo $RVER|cut -d. -f1)
+PATH=$PATH:/sbin:/usr/sbin
+export LDFLAGS=-s
+if ! [ -x /sbin/apk ]; then
+	[ -f apk.static ] || wget https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v$APKTOOLVER/x86_64/apk.static
+	ln -s apk.static apk
+	chmod +x apk
+
+	#[ -f apk-tools-$APKTOOLVER.tar.xz ] || wget https://git.alpinelinux.org/apk-tools/snapshot/apk-tools-$APKTOOLVER.tar.xz
+	#tar xf apk-tools-$APKTOOLVER.tar.xz
+	#cd apk-tools-$APKTOOLVER
+	#make LUA=no 
+	#mv src/apk ..
+else
+	ln -sf /sbin/apk ./apk
+fi
+mkdir build_chroot
+[ -f build_chroot/R-$RVER.tar.gz ] || { 
+	wget https://cran.r-project.org/src/base/R-$RMAJOR/R-$RVER.tar.gz
+	mv R-$RVER.tar.gz build_chroot/
+}
+[ -d build_chroot/lagun ] || {
+	git clone --depth=1 https://gitlab.com/drti/lagun.git
+	mv lagun build_chroot/
+	rm -fr lagun/documentation lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/tests
+	cp loadPackages.R build_chroot/lagun/lagun/
+	cp evaluateDOE.R build_chroot/lagun/lagun/modules/prepareDOE/
+}
+sed s/@RVER@/$RVER/g x02_buildR > build_chroot/x02_buildR
+chmod a+x build_chroot/x02_buildR
+cp x03_buildLagun build_chroot/
+unshare -r ./apk add -p build_chroot --initdb
+cat > build_chroot/etc/apk/repositories << EOF
+http://dl-cdn.alpinelinux.org/alpine/$ALPINEVER/main
+http://dl-cdn.alpinelinux.org/alpine/$ALPINEVER/community
+EOF
+unshare -r ./apk update --allow-untrusted -p build_chroot 
+cat > build_chroot/packages << EOF
+alpine-baselayout
+alpine-keys
+apk-tools
+bsd-compat-headers
+busybox
+gcc
+gfortran
+g++
+cairo-dev
+libpng-dev
+blas-dev
+make
+musl-dev
+linux-headers
+pcre2-dev
+xz-dev
+curl-dev
+perl
+gsl-dev
+libexecinfo-dev
+cmake
+libx11-dev
+libice-dev
+libxt-dev
+xvfb
+EOF
+mkdir build_chroot/dev
+doas mknod build_chroot/dev/null c 1 3
+doas mknod build_chroot/dev/zero c 1 5
+doas mknod build_chroot/dev/full c 1 7
+doas mknod build_chroot/dev/random c 1 8
+doas mknod build_chroot/dev/urandom c 1 9
+doas chmod a+rw build_chroot/dev/*
+unshare -r ./apk add -p build_chroot --allow-untrusted $(cat build_chroot/packages)
+unshare -r ./apk upgrade -p build_chroot
+unshare -r ./apk verify -p build_chroot || { echo "apk verify failed"; exit 1; }

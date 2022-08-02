@@ -1,0 +1,61 @@
+#
+# This file is subject to the terms and conditions defined in
+# the file 'LICENSE', which is part of this source code.
+#
+
+# renv environment (non-volatile dependencies version)
+#if (!("renv" %in% installed.packages())) install.packages("renv")
+#if (any(gregexpr("renv",.libPaths(),fixed=T)<0)) # if renv is not yet "activated"
+#    renv::activate()
+
+library(shiny)
+library(plotly)
+library(ggplot2)
+library(reshape2)
+library(DiceDesign)
+library(sensitivity)
+library(mco)
+library(RColorBrewer)
+library(nloptr)
+library(MaxPro)
+library(parallelPlot)
+library(shinyBS)
+library(NlcOptim)
+library(DT)
+library(pairsD3)
+library(caret)
+library(caretEnsemble)
+library(viridis)
+library(base64enc)
+library(SLHD)
+library(MASS)
+library(quadprog)
+library(abind)
+library(glmnet)
+library(shinyWidgets)
+library(shinyjs)
+library(stringi)
+library(shinycssloaders)
+library(promises)
+library(future.callr)
+library(energy)
+library(GGally)
+library(arsenal)
+library(flexclust)
+library(truncnorm)
+#library(ks)
+library(goftest)
+library(rvinecopulib)
+library(corrplot)
+library(dendextend)
+library(copula)
+library(RANN)
+library(VGAM)
+#library(vbmp)
+library(RobustGaSP)
+library(randtoolbox)
+
+
+if (Sys.getenv("TEST")=="1") {
+    source("tests/shinytest/test_Packages.R")
+}

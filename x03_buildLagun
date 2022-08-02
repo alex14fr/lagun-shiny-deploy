@@ -1,0 +1,14 @@
+#!/bin/sh
+cd /lagun/lagun
+export PATH=$PATH:/opt/R/bin
+echo "options(repos=c(CRAN=\"https://cran.irsn.fr\"))" > instdep.R
+pkgs=$(grep '^library' loadPackages.R|grep -v fOptions|sed -e 's/library(//' -e 's/)//g')
+for p in $pkgs; do
+	echo 'tryCatch(library('$p'),error=function(c){install.packages("'$p'")});' >> instdep.R
+done
+export LD_PRELOAD=/usr/lib/libexecinfo.so
+export DOWNLOAD_STATIC_LIBV8=1
+R --vanilla < instdep.R
+
+
+

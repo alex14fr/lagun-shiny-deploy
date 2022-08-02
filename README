@@ -1,0 +1,25 @@
+This downloads, builds, and create a chroot for a R/Shiny/Lagun server listening on localhost:8080.
+
+Dependencies : usual utilities (including unshare(1)), git, rsync, opendoas (or sudo symlinked to doas).
+
+The build is not made in a safe container.
+
+root privileges are required to create /dev/{random,urandom,full,null,zero} (the scripts will use doas to do this, run them as normal user).
+
+To create the build chroot and build the beast, run :
+   $ ./01_mkbuild && ./02_build
+
+Then, to extract the relevant files in a rootfs directory, run
+   $ MAKEDEV=1 ./03_mkroot
+(again, you'll need to be able to doas root to create the same special nodes in rootfs/dev)
+
+and test using:
+   $ ./99_enter_rootfs /entry
+
+If you use a proper container runtime (recommended) you can run
+   $ ./03_mkroot
+since /dev will be populated by your runtime anyway.
+
+Author : Alexandre Janon <alexandre . janon at u-psud . fr>
+
+

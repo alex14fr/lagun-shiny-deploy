@@ -1,0 +1,40 @@
+#!/bin/sh
+lddep() {
+	cd .. 
+	./99_enter_chroot ldd "$1" 2>/dev/null | awk '{print $3;}' | sed 's,/,,' ;
+	cd -
+}
+set -x
+mkdir rootfs
+mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/var rootfs/var/tmp rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
+cd build_chroot
+cp -a entry ../rootfs/
+rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
+rsync -av --exclude=.git lagun ../rootfs/
+rsync -av --exclude='*include*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/R*' opt ../rootfs/
+cp -a bin ../rootfs/
+cd .. ; ./99_enter_chroot /bin/busybox --install ; cd -
+ln -s /bin/busybox ../rootfs/usr/bin/env
+[ "$MAKEDEV" = "1" ] && doas cp -a dev/* ../rootfs/dev/
+cp -a usr/bin/Xvfb ../rootfs/bin/
+cp -a usr/bin/xkbcomp ../rootfs/usr/bin/
+cp -a lib/ld-musl* ../rootfs/lib/
+cp -a usr/share/X11/xkb ../rootfs/usr/share/X11/
+cp -a usr/bin/which ../rootfs/usr/bin/
+cp  $(lddep /usr/bin/Xvfb) ../rootfs/lib
+cp  $(lddep /usr/bin/which) ../rootfs/lib
+cp  $(lddep /usr/bin/xkbcomp) ../rootfs/lib
+cp  $(lddep /opt/R/lib/R/bin/exec/R) ../rootfs/lib
+for l in opt/R/lib/R/modules/*; do
+	cp $(lddep /$l) ../rootfs/usr/lib
+done
+for l in libexecinfo.so libcairo.so.2 libgfortran.so.5 libquadmath.so.0 libgsl.so.27 libgslcblas.so.0 ; do
+	cp $(find . -name "$l") ../rootfs/usr/lib
+done
+cd ..
+./99_enter_rootfs chmod -R a+r .
+./99_enter_rootfs chmod -R a+x bin/* sbin/* usr/bin/* usr/sbin/*
+./99_enter_rootfs chmod -R a+w tmp var/tmp
+cd rootfs
+tar cv . |xz -9c > ../rootfs.tar.xz
+
