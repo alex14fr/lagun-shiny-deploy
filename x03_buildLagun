@@ -7,8 +7,8 @@ R CMD INSTALL $INSTALL_opts .
 cd /lagun/lagun
 echo "options(repos=c(CRAN=\"https://cran.irsn.fr\"))" > instdep.R
 pkgs=$(grep '^library' loadPackages.R|grep -v fOptions|sed -e 's/library(//' -e 's/)//g')
-for p in $pkgs; do
-	echo 'tryCatch(library('$p'),error=function(c){install.packages("'$p'",INSTALL_opts=c("--strip","--strip-lib","--no-data","--no-help","--no-docs","--no-demo","--no-html")});' >> instdep.R
+for p in markdown $pkgs; do
+	echo 'tryCatch(library('$p'),error=function(c){install.packages("'$p'",INSTALL_opts=c("--strip","--strip-lib","--no-data","--no-help","--no-docs","--no-demo","--no-html"))});' >> instdep.R
 done
 export DOWNLOAD_STATIC_LIBV8=1
 R --vanilla < instdep.R
