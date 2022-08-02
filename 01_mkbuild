@@ -65,6 +65,7 @@ libx11-dev
 libice-dev
 libxt-dev
 xvfb
+musl-utils
 EOF
 mkdir build_chroot/dev
 doas mknod build_chroot/dev/null c 1 3
