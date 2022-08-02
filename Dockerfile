@@ -1,4 +1,4 @@
-FROM busybox
+FROM quay.io/prometheus/busybox
 RUN wget https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz
 
 FROM scratch 
