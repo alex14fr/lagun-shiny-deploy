@@ -9,7 +9,7 @@ root privileges are required to create /dev/{random,urandom,full,null,zero} (the
 To create the build chroot and build the beast, run :
    $ ./01_mkbuild && ./02_build
 
-Then, to extract the relevant files in a rootfs directory, run
+Then, to extract the relevant files in a rootfs directory, and create rootfs.tar.xz, run
    $ MAKEDEV=1 ./03_mkroot
 (again, you'll need to be able to doas root to create the same special nodes in rootfs/dev)
 
@@ -19,6 +19,8 @@ and test using:
 If you use a proper container runtime (recommended) you can run
    $ ./03_mkroot
 since /dev will be populated by your runtime anyway.
+
+The included Dockerfile can be used to create a container from the built rootfs.tar.xz available at <https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>.
 
 Author : Alexandre Janon <alexandre . janon at u-psud . fr>
 
