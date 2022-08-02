@@ -1,12 +1,15 @@
 #!/bin/sh
-cd /lagun/lagun
 export PATH=$PATH:/opt/R/bin
+export LD_PRELOAD=/usr/lib/libexecinfo.so
+INSTALL_opts="--strip --strip-lib --no-data --no-help --no-demo --no-docs --no-html"
+cd /vbmp
+R CMD INSTALL $INSTALL_opts .
+cd /lagun/lagun
 echo "options(repos=c(CRAN=\"https://cran.irsn.fr\"))" > instdep.R
 pkgs=$(grep '^library' loadPackages.R|grep -v fOptions|sed -e 's/library(//' -e 's/)//g')
 for p in $pkgs; do
-	echo 'tryCatch(library('$p'),error=function(c){install.packages("'$p'")});' >> instdep.R
+	echo 'tryCatch(library('$p'),error=function(c){install.packages("'$p'",INSTALL_opts=c("--strip","--strip-lib","--no-data","--no-help","--no-docs","--no-demo","--no-html")});' >> instdep.R
 done
-export LD_PRELOAD=/usr/lib/libexecinfo.so
 export DOWNLOAD_STATIC_LIBV8=1
 R --vanilla < instdep.R
 

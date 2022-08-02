@@ -2,5 +2,5 @@
 cd /lagun/lagun
 rm -f /tmp/.X*
 Xvfb :999&
-exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/usr/lib/libexecinfo.so R --vanilla -e 'shiny::runApp("app.R", port=8080, host="0.0.0.0", launch.browser=F)'
+exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/lib/libexecinfo.so R --vanilla -e 'shiny::runApp("app.R", port=8080, host="0.0.0.0", launch.browser=F)'
 

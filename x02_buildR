@@ -2,10 +2,7 @@
 set -eux
 [ -d R-@RVER@ ] || tar xf R-@RVER@.tar.gz
 cd R-@RVER@
-export CFLAGS=-O2
-export CXXFLAGS=$CFLAGS
-export F77FLAGS=$CFLAGS
-[ -f Makefile ] || ./configure --prefix=/opt/R --with-readline=no --with-tcltk=no --enable-java=no --enable-shared=no --with-ICU=no --disable-openmp --disable-nls 
+[ -f Makefile ] || ./configure --prefix=/opt/R --with-readline=no --with-tcltk=yes --enable-java=no --enable-shared=no --with-ICU=no --disable-openmp --disable-nls --with-recommended-packages=no
 make -j8
 make install-strip
 

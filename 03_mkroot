@@ -6,12 +6,12 @@ lddep() {
 }
 set -x
 mkdir rootfs
+cp entry rootfs/
 mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/var rootfs/var/tmp rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
 cd build_chroot
-cp -a entry ../rootfs/
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
 rsync -av --exclude=.git lagun ../rootfs/
-rsync -av --exclude='*include*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/R*' opt ../rootfs/
+rsync -av --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/R*' --exclude='*R/lib/R/library/*/doc/*' --exclude='*R/lib/R/library/*/help/*' --exclude='*R/lib/R/library/*/html/*' opt ../rootfs/
 cp -a bin ../rootfs/
 cd .. ; ./99_enter_rootfs /bin/busybox --install ; cd -
 ln -s /bin/busybox ../rootfs/usr/bin/env
