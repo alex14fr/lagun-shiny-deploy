@@ -1,4 +1,4 @@
-FROM alpine
+FROM busybox
 RUN wget https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz
 
 FROM scratch 
