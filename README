@@ -2,7 +2,7 @@ This downloads, builds, and create a chroot for a R/Shiny/Lagun server listening
 
 Dependencies : usual utilities (including unshare(1)), git, rsync, opendoas (or sudo symlinked to doas).
 
-The build is not made in a safe container.
+The build is not made in a safe container (no pivot_root/umount, no capability drop, seccomp, no IPC/network isolation...), don't run it as privilegied user.
 
 root privileges are required to create /dev/{random,urandom,full,null,zero} (the scripts will use doas to do this, run them as normal user).
 
