@@ -15,7 +15,7 @@ excl=
 for i in doc help html examples data demo; do
 	excl="$excl "'--exclude=*R/lib/R/library/*/'$i'/*'
 done
-rsync -av --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/R*' $excl opt ../rootfs/
+rsync -a --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/*' --exclude='*R/share/*' $excl opt ../rootfs/
 cp -a bin ../rootfs/
 cd .. ; ./99_enter_rootfs /bin/busybox --install ; cd -
 ln -s /bin/busybox ../rootfs/usr/bin/env
