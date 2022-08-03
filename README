@@ -16,7 +16,7 @@ Then, to extract the relevant files in a rootfs directory, and create rootfs.tar
 and test using (unsafe container, see above):
    $ ./99_enter_rootfs /entry
 
-If you use a proper container runtime (recommended) you can run
+If you use a proper container runtime (recommended), to create rootfs you can run
    $ ./03_mkroot
 since /dev will be populated by your runtime anyway.
 
