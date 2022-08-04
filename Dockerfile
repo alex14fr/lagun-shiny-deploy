@@ -3,6 +3,7 @@ RUN wget https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz && mkdir rootfs &
 
 FROM scratch 
 COPY --from=0 rootfs /
+COPY --from=0 entry_multi /
 EXPOSE 8080 
 CMD [ "/entry_multi" ]
 

@@ -1,7 +1,6 @@
 #!/bin/sh
 rm -rf /tmp/* /tmp/.*
 [ -e /proc/self ] || mount -t proc none /proc
-umask 117
 cat > /tmp/index.html << EOF
 <!doctype html>
 <meta name=viewport content=width=device-width>
@@ -21,7 +20,7 @@ for d in /apps/* ; do
 	a=$(basename $d)
 	mkdir /tmp/priv_$a
 	args="$args $a:/tmp/priv_$a/sock"
-	env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so unshare -Upmfn R --vanilla -e 'p="/tmp/priv_'$a'/sock"; attr(p,"mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)' &
+	env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so R --vanilla -e 'p="/tmp/priv_'$a'/sock"; attr(p,"mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)' &
 done
 cd /
 exec env -i /relayttpd 8080 $args
