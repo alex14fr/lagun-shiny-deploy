@@ -111,7 +111,7 @@ plot.checkDOE <- function(listDOE) {
 plot.checkDOE.LHS <- function(listDOE) {
   nb.inputs <- listDOE$nb.inputs
   visudata <- data.frame(doetype='LHS',Chi2 = matrix(rep(0,nb.inputs),ncol=nb.inputs))
-  if (!is.na(listDOE$lfaure)){
+  if (!all(is.na(listDOE$lfaure))){
     visudata <- rbind(visudata,data.frame(doetype='Faure',Chi2 = listDOE$lfaure))
   }
   visudata <- rbind(visudata,data.frame(doetype='Halton',Chi2 = listDOE$lhalton))
