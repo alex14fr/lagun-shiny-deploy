@@ -27,11 +27,11 @@ cp src/relayttpd.c build_chroot/
 [ -d build_chroot/lagun ] || {
 	git clone --depth=1 https://gitlab.com/drti/lagun.git
 	mv lagun build_chroot/
-	rm -fr lagun/documentation lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/tests
-	cp loadPackages.R build_chroot/lagun/lagun/
-	cp evaluateDOE.R build_chroot/lagun/lagun/modules/prepareDOE/
-	cp app.R build_chroot/lagun/lagun/app.R
 }
+rm -fr lagun/documentation lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/tests
+cp loadPackages.R build_chroot/lagun/lagun/
+cp evaluateDOE.R build_chroot/lagun/lagun/modules/prepareDOE/
+cp app.R build_chroot/lagun/lagun/app.R
 [ -d build_chroot/vbmp ] || {
 	git clone --depth=1 https://gitlab.com/drti/vbmp.git
 	mv vbmp build_chroot/

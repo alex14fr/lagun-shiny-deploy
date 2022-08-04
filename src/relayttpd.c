@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 								char buf[256];
 								int ww=snprintf(buf,256,"HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-length: %d\r\n\r\n", (int)stbuf.st_size);
 								write(cc->fd, buf, ww);
-								int fd=open("/tmp/index.html",O_RDONLY);
+								int fd=open(HOME, O_RDONLY);
 								sendfile(cc->fd, fd, 0, stbuf.st_size);
 								continue;
 							}

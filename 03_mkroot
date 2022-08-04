@@ -6,13 +6,14 @@ lddep() {
 }
 set -x
 mkdir rootfs
+mkdir rootfs/apps
 cp entry* rootfs/
-cp -a testapp rootfs/
+cp -a testapp rootfs/apps/
 mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/var rootfs/var/tmp rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
 cd build_chroot
 cp relayttpd ../rootfs/
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
-rsync -av --exclude=.git lagun ../rootfs/
+rsync -av --exclude=.git lagun/lagun ../rootfs/apps/
 excl=
 for i in doc help html examples data demo; do
 	excl="$excl "'--exclude=*R/lib/R/library/*/'$i'/*'
@@ -42,5 +43,5 @@ cd ..
 ./99_enter_rootfs chmod -R a+x bin/* sbin/* usr/bin/* usr/sbin/*
 ./99_enter_rootfs chmod -R a+w tmp var/tmp
 cd rootfs
-tar cv . |xz -c > ../rootfs.tar.xz
+tar cv . |xz -9c > ../rootfs.tar.xz
 
