@@ -1,0 +1,26 @@
+#!/bin/sh
+rm -rf /tmp/* /tmp/.*
+[ -e /proc/self ] || mount -t proc none /proc
+cat > /tmp/index.html << EOF
+<!doctype html>
+<title>Shiny</title>
+<a target=_new href=lagun/>LAGUN</a><p>
+<a target=_new href=testapp/>Test application</a><p>
+<details><summary>System info</summary>
+<pre>
+Server started $(date)
+EOF
+/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
+echo "</details>" >> /tmp/index.html
+echo "<a target=_new href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
+Xvfb :999&
+unixsock1=/tmp/lagunsock
+unixsock2=/tmp/testappsock
+cd /lagun/lagun
+env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/lib/libexecinfo.so R --vanilla -e 'p="'$unixsock1'"; attr(p,"mask")=0; shiny::runApp("app.R", port=p, launch.browser=F)' &
+cd /testapp
+env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/lib/libexecinfo.so R --vanilla -e 'p="'$unixsock2'"; attr(p,"mask")=0; shiny::runApp("app.R", port=p, launch.browser=F)' &
+cd /
+exec env -i /relayttpd 8080 lagun:$unixsock1 testapp:$unixsock2
+
+
