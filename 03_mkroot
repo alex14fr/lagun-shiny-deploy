@@ -6,16 +6,18 @@ lddep() {
 }
 set -x
 mkdir rootfs
-cp entry rootfs/
+cp entry* rootfs/
+cp -a testapp rootfs/
 mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/var rootfs/var/tmp rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
 cd build_chroot
+cp relayttpd ../rootfs/
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
 rsync -av --exclude=.git lagun ../rootfs/
 excl=
 for i in doc help html examples data demo; do
 	excl="$excl "'--exclude=*R/lib/R/library/*/'$i'/*'
 done
-rsync -a --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/*' --exclude='*R/share/*' $excl opt ../rootfs/
+rsync -a --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*.map' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/*' --exclude='*R/share/*' $excl opt ../rootfs/
 cp -a bin ../rootfs/
 cd .. ; ./99_enter_rootfs /bin/busybox --install ; cd -
 ln -s /bin/busybox ../rootfs/usr/bin/env
