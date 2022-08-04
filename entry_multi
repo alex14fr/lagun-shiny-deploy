@@ -4,15 +4,15 @@ rm -rf /tmp/* /tmp/.*
 cat > /tmp/index.html << EOF
 <!doctype html>
 <title>Shiny</title>
-<a target=_new href=lagun/>LAGUN</a><p>
-<a target=_new href=testapp/>Test application</a><p>
+<a target=_blank href=lagun/>LAGUN</a><p>
+<a target=_blank href=testapp/>Test application</a><p>
 <details><summary>System info</summary>
 <pre>
 Server started $(date)
 EOF
 /opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
 echo "</details>" >> /tmp/index.html
-echo "<a target=_new href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
+echo "<a target=_blank href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
 Xvfb :999&
 unixsock1=/tmp/lagunsock
 unixsock2=/tmp/testappsock
