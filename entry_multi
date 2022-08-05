@@ -14,14 +14,24 @@ EOF
 /opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
 echo "</pre></details><p><a target=_blank href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
 Xvfb :999&
+sleep 1
 args=""
+mkdir /tmp/priv
+pp=1234
 for d in /apps/* ; do
-	cd $d
 	a=$(basename $d)
-	mkdir /tmp/priv_$a
-	args="$args $a:/tmp/priv_$a/sock"
-	env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so R --vanilla -e 'p="/tmp/priv_'$a'/sock"; attr(p,"mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)' &
+	mkdir /tmp/priv/$a
+	mkdir /tmp/priv/$a/.X11-unix
+	ln /tmp/.X11-unix/X999 /tmp/priv/$a/.X11-unix/X999
+	args="$args $a:/tmp/priv/$a/sock"
+	addcmd="nc -s 127.0.0.1 -p $pp -lke /bin/sh &"
+	cat > /tmp/priv/$a/launch << EOF
+#!/bin/sh
+exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so R --vanilla -e 'p="/tmp/sock"; attr(p, "mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)' 
+EOF
+	chmod +x /tmp/priv/$a/launch
+	unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; cd /apps ; $addcmd exec unshare -Upfin /tmp/launch" &
+	pp=$(($pp+1))
 done
-cd /
 exec env -i /relayttpd 8080 $args
 
