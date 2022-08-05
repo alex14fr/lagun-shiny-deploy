@@ -13,6 +13,7 @@ Server started $(date)
 EOF
 /opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
 echo "</pre></details><p><a target=_blank href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
+mkdir /tmp/cache
 Xvfb :999&
 sleep 1
 args=""
@@ -31,6 +32,7 @@ exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin
 EOF
 	chmod +x /tmp/priv/$a/launch
 	unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; cd /apps ; $addcmd exec unshare -Upfin /tmp/launch" &
+#	(sleep 60 ; echo -en "GET / HTTP/1.1\r\n\r\n"|nc localhost 8080 > /tmp/cache/$a.html) &
 	pp=$(($pp+1))
 done
 exec env -i /relayttpd 8080 $args
