@@ -1,4 +1,4 @@
 #!/bin/sh
 mkdir /tmp/priv/terminal/priv
 cp /tmp/priv/terminal/launch /tmp/priv/terminal/priv/
-unshare -rpmf /bin/sh -c "mount --bind /apps/terminal /apps; mount --bind /tmp/priv/terminal /tmp; cd /tmp; exec unshare -rpmfin ttyd -O -i /tmp/x.sock unshare -rpmf /bin/sh -c \"mount --bind /tmp/priv /tmp; mkdir /tmp/z; mount --bind /tmp/z /dev/pts; unshare -Upfin /tmp/launch\""
+unshare -rpmf /bin/sh -c "mount --bind /apps/terminal /apps; mount --bind /tmp/priv/terminal /tmp; cd /tmp; exec unshare -rpmfin ttyd -O -i /tmp/x.sock unshare -rpmf /bin/sh -c \"mount --bind /tmp/priv /tmp; [ -d /tmp/z ] || mkdir /tmp/z; mount --bind /tmp/z /dev/pts; unshare -Upfin /tmp/launch\""
