@@ -20,7 +20,13 @@ int main(int argc, char **argv) {
 	struct sockaddr_un saddr;
 	saddr.sun_family=AF_UNIX;
 	strlcpy(saddr.sun_path,argv[1],108);
-	if(connect(s, (struct sockaddr*)&saddr, sizeof(struct sockaddr_un))<0) { perror("connect"); exit(1); }
+	int ntry;
+	for(ntry=0; ntry<100; ntry++) {
+		if(connect(s, (struct sockaddr*)&saddr, sizeof(struct sockaddr_un))>=0) 
+			break;
+		sleep(2);
+	}
+	if(ntry==100) { perror("connect"); exit(1); }
 	char *reqq=(argc<4 ? req : reqgz);
 	if(write(s, reqq, strlen(reqq))<0) { perror("write"); exit(1); }
 	signal(SIGALRM, timeout);

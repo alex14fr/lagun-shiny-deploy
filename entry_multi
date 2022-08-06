@@ -43,7 +43,8 @@ EOF
 		/tmp/priv/$a/launch0 &
 	fi
 	if [ ! -e /apps/$a/no_home_cache ]; then
-		(sleep 60 ; /httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz ; /httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html ) &
+		/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &
+		/httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html &
 	fi
 	pp=$(($pp+1))
 done
