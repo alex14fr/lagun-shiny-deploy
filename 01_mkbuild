@@ -75,6 +75,7 @@ musl-utils
 tk-dev
 ttyd
 strace
+readline-dev
 EOF
 mkdir build_chroot/dev
 doas mknod build_chroot/dev/null c 1 3

@@ -3,7 +3,7 @@ set -eux
 make -C src CFLAGS="-D_GNU_SOURCE -O3 -Wall -std=c99" LDFLAGS="-static -s" relayttpd httpget
 [ -d R-@RVER@ ] || tar xf R-@RVER@.tar.gz
 cd R-@RVER@
-[ -f Makefile ] || ./configure --prefix=/opt/R --with-readline=no --with-tcltk=yes --enable-java=no --enable-shared=no --with-ICU=no --disable-openmp --disable-nls --with-recommended-packages=no
+[ -f Makefile ] || ./configure --prefix=/opt/R --with-readline=yes --with-tcltk=yes --enable-java=no --enable-shared=no --with-ICU=no --disable-openmp --disable-nls --with-recommended-packages=no
 make -j8
 make install-strip
 
