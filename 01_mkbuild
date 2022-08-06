@@ -76,7 +76,10 @@ tk-dev
 ttyd
 strace
 readline-dev
+lrzsz
 EOF
+[ -e lrzsz*apk ] || wget http://dl-cdn.alpinelinux.org/alpine/edge/testing/x86_64/lrzsz-0.12.20-r1.apk
+zcat lrzsz*apk | unshare -r tar xv -C build_chroot/
 mkdir build_chroot/dev
 doas mknod build_chroot/dev/null c 1 3
 doas mknod build_chroot/dev/zero c 1 5

@@ -30,6 +30,7 @@ cp -a usr/share/X11/xkb ../rootfs/usr/share/X11/
 cp -a usr/bin/which ../rootfs/usr/bin/
 cp -a usr/bin/ttyd ../rootfs/usr/bin/
 cp -a usr/bin/strace ../rootfs/usr/bin/
+cp usr/bin/lrz usr/bin/lsz ../rootfs/bin/
 cp -a usr/lib/libwebsockets-evlib_uv.so ../rootfs/usr/lib/
 cp  $(lddep /usr/bin/ttyd) ../rootfs/lib
 cp  $(lddep /usr/bin/strace) ../rootfs/lib

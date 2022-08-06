@@ -35,7 +35,7 @@ exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin
 EOF
 	fi
 	chmod +x /tmp/priv/$a/launch
-	unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; cd /apps ; $addcmd exec unshare -Upfin /tmp/launch" &
+	unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; (sleep 60 ; chattr +i /tmp/x.sock) & cd /apps ; $addcmd exec unshare -Upfin /tmp/launch" &
 	if [ ! -e /apps/$a/no_home_cache ]; then
 		(sleep 60 ; /httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz ; /httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html ) &
 	fi
