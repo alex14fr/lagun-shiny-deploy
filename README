@@ -50,7 +50,8 @@ Changes in Lagun (see loadPackages.R, app.R and evaluateDOE.R):
          - uses ttyd <https://tsl0922.github.io/ttyd/> and provides 
 you with an R terminal on the web
          - it supports sending/receiving files via ZMODEM (use 
-system("lrz") and system("lsz") at the R prompt to receive/send files from your 
+system("lrz") and system("lsz <file>") at the R prompt to receive/send files 
+from your 
 browser -- the files in this app should be considered readable/writable by 
 anyone with access to the HTTP server). Use it to import your R code/data and 
 export your plots and computation results.
