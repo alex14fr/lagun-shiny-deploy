@@ -14,7 +14,7 @@ void timeout(int sig) {
 }
 
 int main(int argc, char **argv) {
-	if(argc<3) { printf("Usage: %s socket time [gzip]\n", argv[0], argv[1]); exit(1); } 
+	if(argc<3) { printf("Usage: %s socket time [gzip]\n", argv[0]); exit(1); } 
 	int s=socket(AF_UNIX, SOCK_STREAM, 0);
 	if(s<0) { perror("socket"); exit(1); }
 	struct sockaddr_un saddr;
