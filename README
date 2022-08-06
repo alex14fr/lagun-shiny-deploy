@@ -54,18 +54,8 @@ you with an R terminal on the web
          - if needed use system("sh") to go to a shell prompt.
          - it supports sending/receiving files via ZMODEM (use 
 system("lrz"), resp. system("lsz <file>") at the R prompt to receive/send files 
-from your 
-browser -- the files in this app should be considered readable/writable by 
-anyone with access to the HTTP server). Use it to import your R code/data and 
+from your browser). Use it to import your R code/data and 
 export your plots and computation results.
-You can also use it to share files between browsers:
-on the "sender":
-  > system("sh")
-  $ lrz
-  (select file to send on your browser)
-on the "receiver":
-  > system("sh")
-  $ lsz [file]
          - No network access is permitted in this app (so no install.packages 
 from CRAN other than the preinstalled packages)
 
