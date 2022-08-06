@@ -25,7 +25,7 @@ for d in /apps/* ; do
 	mkdir /tmp/priv/$a/.X11-unix
 	ln /tmp/.X11-unix/X999 /tmp/priv/$a/.X11-unix/X999
 	args="$args $a:/tmp/priv/$a/x.sock"
-	addcmd="nc -s 127.0.0.1 -p $pp -lke /bin/sh &"
+#	addcmd="nc -s 127.0.0.1 -p $pp -lke /bin/sh &"
 	if [ -e /apps/$a/launch ]; then
 		cp /apps/$a/launch /tmp/priv/$a/launch
 	else
