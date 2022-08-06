@@ -30,7 +30,7 @@ for d in /apps/* ; do
 		cp /apps/$a/launch /tmp/priv/$a/launch
 	else
 		cat > /tmp/priv/$a/launch << EOF
-!/bin/sh
+#!/bin/sh
 exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so R --vanilla -e 'p="/tmp/x.sock"; attr(p, "mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)' 
 EOF
 	fi
