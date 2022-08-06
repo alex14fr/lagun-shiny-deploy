@@ -1,5 +1,6 @@
 #!/bin/sh
 rm -rf /tmp/* /tmp/.*
+rm -rf /var/run/*
 [ -e /proc/self ] || mount -t proc none /proc
 cat > /tmp/index.html << EOF
 <!doctype html>
