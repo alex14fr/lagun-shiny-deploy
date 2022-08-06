@@ -128,9 +128,9 @@ int try_parse_appname(struct conn* c, char *appname, char *translated_req, int *
 	if(i==c->reqsz) return(-1);
 	if(i==REQSZ || c->req[i]!='/') return(-2);
 	i++;
+	if(i==REQSZ) return(-2);
 	translated_req[tr_req_index++]=' ';
 //	translated_req[tr_req_index++]='/';
-	if(i==REQSZ) return(-2);
 	int j=0;
 	while(i<c->reqsz && i<REQSZ && j<REQSZ && !isspc(c->req[i]) && c->req[i]!='/') {
 		appname[j++]=c->req[i++];
