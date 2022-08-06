@@ -24,7 +24,7 @@ The included Dockerfile can be used to create a container from the built rootfs.
 
 Changes in Lagun (see loadPackages.R, app.R and evaluateDOE.R):
 
- - don't use renv
+ - don't use renv; all dependencies are at their latest version on CRAN
  - send keepalive messages on the websocket every 140 s
  - replace fOptions package for quasi-random sequences
 
