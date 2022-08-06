@@ -8,10 +8,10 @@ set -x
 mkdir rootfs
 mkdir rootfs/apps
 cp entry* rootfs/
-cp -a testapp rootfs/apps/
-mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/var rootfs/var/tmp rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
+cp -a apps rootfs/
+mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
 cd build_chroot
-cp relayttpd ../rootfs/
+cp src/relayttpd src/httpget ../rootfs/
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
 rsync -av --exclude=.git lagun/lagun ../rootfs/apps/
 excl=
@@ -28,6 +28,11 @@ cp -a usr/bin/xkbcomp ../rootfs/usr/bin/
 cp -a lib/ld-musl* ../rootfs/lib/
 cp -a usr/share/X11/xkb ../rootfs/usr/share/X11/
 cp -a usr/bin/which ../rootfs/usr/bin/
+cp -a usr/bin/ttyd ../rootfs/usr/bin/
+cp -a usr/bin/strace ../rootfs/usr/bin/
+cp -a usr/lib/libwebsockets-evlib_uv.so ../rootfs/usr/lib/
+cp  $(lddep /usr/bin/ttyd) ../rootfs/lib
+cp  $(lddep /usr/bin/strace) ../rootfs/lib
 cp  $(lddep /usr/bin/Xvfb) ../rootfs/lib
 cp  $(lddep /usr/bin/which) ../rootfs/lib
 cp  $(lddep /usr/bin/xkbcomp) ../rootfs/lib

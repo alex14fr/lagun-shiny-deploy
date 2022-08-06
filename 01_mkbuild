@@ -19,7 +19,7 @@ else
 	ln -sf /sbin/apk ./apk
 fi
 mkdir build_chroot
-cp src/relayttpd.c build_chroot/
+cp -a src build_chroot/
 [ -f build_chroot/R-$RVER.tar.gz ] || { 
 	wget https://cran.r-project.org/src/base/R-$RMAJOR/R-$RVER.tar.gz
 	mv R-$RVER.tar.gz build_chroot/
@@ -73,6 +73,8 @@ libxt-dev
 xvfb
 musl-utils
 tk-dev
+ttyd
+strace
 EOF
 mkdir build_chroot/dev
 doas mknod build_chroot/dev/null c 1 3

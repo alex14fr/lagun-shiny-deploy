@@ -39,7 +39,7 @@
 #include <sys/sendfile.h>
 
 #define MAXEVENTS 10
-#define REQSZ 128
+#define REQSZ 512
 #define HOME "/tmp/index.html"
 
 #define ERRMSG "HTTP/1.1 400\r\nConnection: close\r\n\r\n400 Bad request"
@@ -152,12 +152,18 @@ int try_serve_cache(struct conn *c, char *appname, char *translated_req, int tra
 	// -1->cache MISS
 	if(translated_req_len<6) return(-1);
 	if(memcmp(translated_req,"GET /",5)==0 && isspc(translated_req[5])) {
-		char buf[256], buf2[256];
-		snprintf(buf, 256, "/tmp/cache/%s.html", appname);
+		char buf[256];
+		snprintf(buf, 256, "/tmp/cache/%s.html.gz", appname);
 		struct stat sbuf;
-		if(stat(buf,&sbuf)==0 && access(buf,R_OK)==0) {
-			//int ww=snprintf(buf2, 256, "HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-length: %d\r\n\r\n", (int)sbuf.st_size);
-			//write(c->fd, buf2, ww);
+		//printf("translated_req\n");write(STDERR_FILENO,translated_req,translated_req_len);
+		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0 && \
+					memmem(translated_req,translated_req_len,"gzip",4)!=NULL) {
+			int fd=open(buf,O_RDONLY);
+			sendfile(c->fd, fd, 0, sbuf.st_size);
+			return(0);
+		}
+		snprintf(buf, 256, "/tmp/cache/%s.html", appname);
+		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0) {
 			int fd=open(buf,O_RDONLY);
 			sendfile(c->fd, fd, 0, sbuf.st_size);
 			return(0);

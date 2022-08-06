@@ -3,7 +3,7 @@
   "mounts": [ { "source": "none", "destination": "/proc", "type": "proc" },
   				  { "source": "none", "destination": "/dev/pts", "type": "devpts" },
               { "source": "none", "destination": "/tmp", "type": "tmpfs" } ],
-  "process": { "cwd": "/", "args": [ "/bin/ttyd", "/bin/sh" ], "noNewPrivileges":false },
+  "process": { "cwd": "/", "args": [ "/bin/ttyd", "/bin/sh" ] },
   "user": { "uid": 1000, "gid": 1000 },
   "linux": { "namespaces": [ { "type": "pid" },
   									  { "type": "ipc" },
