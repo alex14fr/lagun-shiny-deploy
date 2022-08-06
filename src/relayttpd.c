@@ -37,6 +37,7 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <sys/sendfile.h>
+#include <sys/wait.h>
 
 #define MAXEVENTS 10
 #define REQSZ 512
@@ -257,6 +258,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	} */
 	while(1) {
+		int wstatus;
+		waitpid(-1, &wstatus, WNOHANG);
 		int nfds=epoll_wait(epollfd, events, MAXEVENTS, -1);
 		if(nfds<0) { perror("epoll_wait"); exit(1); }
 		for(int n=0; n<nfds; n++) {
