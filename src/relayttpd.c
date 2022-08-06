@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
 							cc->other->sure_bind=0; 
 						}
 					}
-					if((nr=send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
+					if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
 						//perror("send");
 						destroy_conn(cc);
 					}
