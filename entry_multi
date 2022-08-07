@@ -8,7 +8,7 @@ cat > /tmp/index.html << EOF
 <title>R/Shiny @ GdR MASCOT-NUM</title>
 <a href=https://github.com/alex14fr/lagun-shiny-deploy/blob/master/README>README</a><p>
 <a href=lagun/>LAGUN</a><p>
-<a herf=terminal/>R terminal</a><p>
+<a href=terminal/>R terminal</a><p>
 <!--
 <a href=testapp/>Test application</a><p>
 -->
