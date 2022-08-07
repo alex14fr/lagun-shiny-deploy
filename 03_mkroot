@@ -14,6 +14,7 @@ cd build_chroot
 cp src/relayttpd src/httpget ../rootfs/
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
 rsync -av --exclude=.git lagun/lagun ../rootfs/apps/
+touch ../rootfs/apps/lagun/no_home_cache
 excl=
 for i in doc help html examples data demo; do
 	excl="$excl "'--exclude=*R/lib/R/library/*/'$i'/*'
