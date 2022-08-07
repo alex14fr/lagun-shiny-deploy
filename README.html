@@ -15,7 +15,7 @@ an R terminal in apps/terminal:
 system("lrz"), resp. system("lsz <file>") at the R prompt to receive/send files 
 from your browser). Use it to import your R code/data and 
 export your plots and computation results. Only /tmp is writable, and this
-directory lives no more than 25 hours (change this in entry_multi if you want).
+directory lives no more than 25 hours (change this in entry_multi and src/cleanfiles.c if you want).
   <li> No network access is permitted in this app (so no install.packages 
 from CRAN other than the preinstalled packages).
   <li> Each terminal session runs in a separate container. Files are separated between sessions. If you don't want this, there is a "shared_files_terminal" applications in apps/ that you can run by removing the "off" file in its directory. In this shared mode, even the pseudo tty files are readable and writable.

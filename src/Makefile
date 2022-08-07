@@ -1,6 +1,6 @@
 CFLAGS=-O3 -Wall -std=c99 -D_GNU_SOURCE
 LDFLAGS=-s
-BINS=dropcap-inner dropcap-outer httpget relayttpd
+BINS=dropcap-simple dropcap-inner dropcap-outer httpget relayttpd cleanfiles
 all: $(BINS)
 clean:
 	rm $(BINS)

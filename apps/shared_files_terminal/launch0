@@ -1,5 +1,5 @@
 #!/bin/sh
-ttyd_options="-O -P 140 -t titleFixed=Terminal -t disableLeaveAlert=false"
+ttyd_options="-O -P 140 -t titleFixed=Terminal"
 export TERM_SHARE_FILES=1
-exec dropcap-outer ttyd $ttyd_options -i /tmp/x.sock dropcap-inner $(cat /tmp/priv/terminal/launch)
+exec dropcap-outer ttyd $ttyd_options -i /tmp/x.sock dropcap-inner R --vanilla
 

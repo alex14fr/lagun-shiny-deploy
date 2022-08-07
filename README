@@ -14,7 +14,7 @@
        your browser). Use it to import your R code/data and export your
        plots and computation results. Only /tmp is writable, and this
        directory lives no more than 25 hours (change this in entry_multi
-       if you want).
+       and src/cleanfiles.c if you want).
      * No network access is permitted in this app (so no install.packages
        from CRAN other than the preinstalled packages).
      * Each terminal session runs in a separate container. Files are
