@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
 	mkdir("/tmp",0777);
 	mkdir("/tmp/priv",0777);
 	mkdir("/tmp/priv/terminal",0777);
+	if(mount("/tmp/priv/terminal","/var/run",NULL,MS_PRIVATE|MS_BIND,NULL)<0) {  }
 	if(mount("/tmp/priv/terminal","/tmp",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
 	if(mount("/apps/terminal","/apps",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
 	for(int i=0;i<1024;i++) {

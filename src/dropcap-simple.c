@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
 	mkdir("/tmp/priv",0777);
 	snprintf(tmp,256,"/tmp/priv/%s",argv[1]);
 	mkdir(tmp,0777);
+	if(mount(tmp,"/var/run",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { }
 	if(mount(tmp,"/tmp",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
 	snprintf(tmp,256,"/apps/%s",argv[1]);
 	if(mount(tmp,"/apps",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
