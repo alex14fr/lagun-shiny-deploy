@@ -12,12 +12,14 @@ cat > /tmp/index.html << EOF
 <!--
 <a href=testapp/>Test application</a><p>
 -->
+<!--
 <details><summary style=cursor:pointer>System info</summary>
+-->
 <pre>
 Server started $(date)
 EOF
 /opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" | awk '{ if($0 ~ /  / && $0 !~ /\d/) { gsub(/(\w+)/,"<a href=https://cran.r-project.org/web/packages/&/ target=_blank>&</a>"); } print $0; }' >> /tmp/index.html
-echo "</pre></details>" >> /tmp/index.html
+echo "</pre> <!--</details>-->" >> /tmp/index.html
 mkdir /tmp/cache
 Xvfb :999&
 sleep 1
