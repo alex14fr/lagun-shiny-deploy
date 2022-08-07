@@ -25,6 +25,10 @@ rootfs/dev)
 and test using (unsafe container, see above):
    $ ./99_enter_rootfs /entry
 
+To test the fully-fledged server (see "entry_multi" below), use:
+   $ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
+   $ ./99_enter_pivotroot /entry_multi
+
 If you use a proper container runtime (recommended), to create rootfs you can 
 run
    $ ./03_mkroot
