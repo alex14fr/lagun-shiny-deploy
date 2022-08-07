@@ -31,7 +31,6 @@ for d in /apps/* ; do
 	mkdir /tmp/priv/$a/.X11-unix
 	ln /tmp/.X11-unix/X999 /tmp/priv/$a/.X11-unix/X999
 	args="$args $a:/tmp/priv/$a/x.sock"
-#	addcmd="nc -s 127.0.0.1 -p $pp -lke /bin/sh &"
 	if [ -e /apps/$a/launch ]; then
 		cp /apps/$a/launch /tmp/priv/$a/launch
 	else
@@ -42,11 +41,11 @@ EOF
 	fi
 	chmod +x /tmp/priv/$a/launch
 	if [ ! -e /apps/$a/launch0 ]; then
-		unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; cd /apps ; $addcmd exec unshare -Upfin /tmp/launch" &
+		unshare -rpmf /bin/sh -c "mount --bind /apps/$a /apps ; mount --bind /tmp/priv/$a /tmp ; cd /apps ; exec unshare -Upfin /tmp/launch" &
 	else
 		cp /apps/$a/launch0 /tmp/priv/$a/launch0
 		chmod a+x /tmp/priv/$a/launch0
-		/tmp/priv/$a/launch0 &
+		env -i HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so /tmp/priv/$a/launch0 &
 	fi
 	if [ ! -e /apps/$a/no_home_cache ]; then
 		/bin/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &

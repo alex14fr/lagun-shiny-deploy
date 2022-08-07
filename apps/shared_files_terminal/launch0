@@ -1,18 +1,5 @@
 #!/bin/sh
-mkdir /tmp/priv/terminal/mpriv
-cp /tmp/priv/terminal/launch /tmp/priv/terminal/mpriv/
 ttyd_options="-O -P 140 -t titleFixed=Terminal -t disableLeaveAlert=false"
-unshare -rpmf /bin/sh -c "mount --bind /apps/terminal /apps; \
-                          mount --bind /tmp/priv/terminal /tmp; \
-								  cd /tmp; \
-								  exec unshare -rpmfin \
-								     ttyd $ttyd_options -i /tmp/x.sock \
-									      unshare -rpmf \
-											/bin/sh -c \"z=common; \
-											             mkdir /tmp/priv\\\$z; \
-															 cp /tmp/mpriv/launch /tmp/priv\\\$z/;  \
-															 mount --bind /tmp/priv\\\$z /tmp; \
-															 mkdir /tmp/u; \
-															 mount --bind /tmp/u /dev/pts; \
-															 unshare -Upfin /tmp/launch\""
+export TERM_SHARE_FILES=1
+exec dropcap-outer ttyd $ttyd_options -i /tmp/x.sock dropcap-inner $(cat /tmp/priv/terminal/launch)
 

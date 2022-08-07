@@ -4,6 +4,6 @@ BINS=dropcap-inner dropcap-outer httpget relayttpd
 all: $(BINS)
 clean:
 	rm $(BINS)
-install:
+install: $(BINS)
 	cp -a $(BINS) $(DESTDIR)/bin
 .PHONY: all clean install
