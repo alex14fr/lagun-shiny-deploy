@@ -1,3 +1,6 @@
 #!/bin/sh
-unshare -m --mount-proc -p -U -r -f /bin/sh -c "mount --bind rootfs rootfs ; mount -t devpts none rootfs/dev/pts ; mount -t proc none rootfs/proc ; pivot_root rootfs rootfs ; cd / ; umount -l / ; $*"
+unshare -m --mount-proc -p -U -r -f /bin/sh -c "mount --bind rootfs rootfs ; mount -t devpts none rootfs/dev/pts ; mount -t proc none rootfs/proc ; pivot_root rootfs rootfs ; cd / ; umount -l / ; $*"&
+x=$?
+trap "kill -9 $x" INT
+wait
 
