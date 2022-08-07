@@ -19,7 +19,7 @@
   "process": {
     "cwd": "/",
     "args": [
-      "/entry_multi"
+      "/entry"
     ],
     "capabilities": {
       "bounding": [

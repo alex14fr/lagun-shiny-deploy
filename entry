@@ -1,7 +1,47 @@
 #!/bin/sh
-cd /lagun/lagun
-rm -f /tmp/.X*
+rm -rf /tmp/* /tmp/.*
+rm -rf /var/run/*
 [ -e /proc/self ] || mount -t proc none /proc
+cat > /tmp/index.html << EOF
+<!doctype html>
+<meta name=viewport content=width=device-width>
+<title>R/Shiny @ GdR MASCOT-NUM</title>
+<a href=https://github.com/alex14fr/lagun-shiny-deploy/blob/master/README>README</a><p>
+<a href=lagun/>LAGUN</a><p>
+<a href=terminal/>R terminal</a><p>
+<!--
+<a href=testapp/>Test application</a><p>
+-->
+<details><summary style=cursor:pointer>System info</summary>
+<pre>
+Server started $(date)
+EOF
+/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
+echo "</pre></details>" >> /tmp/index.html
+mkdir /tmp/cache
 Xvfb :999&
-exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/lib/libexecinfo.so R --vanilla -e 'shiny::runApp("app.R", port=8080, host="0.0.0.0", launch.browser=F)'
+sleep 1
+args=""
+mkdir /tmp/priv
+for d in /apps/* ; do
+	[ -f $d/off ] && continue
+	a=$(basename $d)
+	mkdir /tmp/priv/$a
+	args="$args $a:/tmp/priv/$a/x.sock"
+	if [ ! -f /apps/$a/launch0 ]; then
+		mkdir /tmp/priv/$a/.X11-unix
+		ln /tmp/.X11-unix/X999 /tmp/priv/$a/.X11-unix/X999
+		env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so dropcap-simple $a R --vanilla -e 'p="/tmp/x.sock"; attr(p, "mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)'  &
+	else
+		cp /apps/$a/launch0 /tmp/priv/$a/launch0
+		chmod a+x /tmp/priv/$a/launch0
+		env -i HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so /tmp/priv/$a/launch0 &
+	fi
+	if [ ! -f /apps/$a/no_home_cache ]; then
+		/bin/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &
+		/bin/httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html &
+	fi
+done
+cleanfiles &
+exec env -i /bin/relayttpd 8080 $args
 

@@ -1,9 +1,0 @@
-#!/bin/sh
-cd /lagun/lagun
-rm -f /tmp/.X*
-[ -e /proc/self ] || mount -t proc none /proc
-Xvfb :999&
-unixsock=/tmp/lagunsock
-rm -f $unixsock
-exec env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=/lib/libexecinfo.so R --vanilla -e 'p="'$unixsock'"; attr(p,"mask")=0; shiny::runApp("app.R", port=p, launch.browser=F)'
-

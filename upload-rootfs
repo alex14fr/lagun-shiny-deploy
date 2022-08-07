@@ -1,4 +1,5 @@
 scp rootfs.tar.xz disque-plm:public/shiny-rootfs.tar.xz
+lynx -dump README.html > README
 git commit -m x -a
 git push
 ~/oc-openshift*/oc start-build lagun-shiny-deploy
