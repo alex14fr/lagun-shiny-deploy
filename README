@@ -63,6 +63,7 @@ export your plots and computation results. Only /tmp is writable, and this
 directory lives no more than 25 hours.
          - No network access is permitted in this app (so no install.packages 
 from CRAN other than the preinstalled packages).
+         - Each terminal session runs in a separate container.
 		   - The launcher for this app is in apps/terminal/launch0.
 
     Each app is run in a separate container; it consists of an R process (or 
