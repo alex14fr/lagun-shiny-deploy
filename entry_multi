@@ -49,5 +49,6 @@ EOF
 	fi
 	pp=$(($pp+1))
 done
+( while [ true ]; do sleep 3600;  find /tmp/priv/terminal/priv* -ctime +1 -delete; done ) &
 exec env -i /relayttpd 8080 $args
 

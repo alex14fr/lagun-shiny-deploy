@@ -55,9 +55,11 @@ you with an R terminal on the web
          - it supports sending/receiving files via ZMODEM (use 
 system("lrz"), resp. system("lsz <file>") at the R prompt to receive/send files 
 from your browser). Use it to import your R code/data and 
-export your plots and computation results.
+export your plots and computation results. Only /tmp is writable, and this
+directory lives no more than 25 hours.
          - No network access is permitted in this app (so no install.packages 
-from CRAN other than the preinstalled packages)
+from CRAN other than the preinstalled packages).
+		   - The launcher for this app is in apps/terminal/launch0.
 
     Each app is run in a separate container; it consists of an R process (or 
 ttyd process) listening on a Unix domain socket. 
