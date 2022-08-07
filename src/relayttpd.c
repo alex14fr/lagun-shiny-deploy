@@ -43,8 +43,8 @@
 #define REQSZ 512
 #define APPNAMESZ 24
 #define HOME "/tmp/index.html"
-#define GC_INTERVAL 10
-#define GC_TIMEOUT 30
+#define GC_INTERVAL 3600
+#define GC_TIMEOUT 86400
 
 #define ERRMSG "HTTP/1.1 400\r\nConnection: close\r\n\r\n400 Bad request"
 #define FORBIDMSG "HTTP/1.1 403\r\nConnection: close\r\n\r\n403 Forbidden"
@@ -65,7 +65,9 @@ struct conn {
 };
 
 static struct conn *g_hd; // pointer to head of global conn linked list 
-
+static struct epoll_event events[MAXEVENTS]; // global event queue
+static int nevents; // nr of events in ev queue 
+static int curevent; // event in ev queue currently processed
 
 int listen_sock(uint16_t port) {
 	struct sockaddr_in addr;
@@ -85,7 +87,27 @@ void insert_conn(struct conn *c) {
 	g_hd=c;
 }
 
+void list_conn(void) {
+	if(g_hd==NULL) {
+		fprintf(stderr, "no conn\n");
+		return;
+	}
+	struct conn *e;
+	time_t now=time(NULL);
+	for(e=g_hd; e!=NULL; e=e->next) {
+		fprintf(stderr, " connection %d, created %ld s ago\n", e->fd, now - e->created);
+		if(e->other!=NULL) {
+			fprintf(stderr, "   (bound to %d)\n", e->other->fd);
+		}
+	}
+}
+
 void remove_conn(struct conn *c) {
+	/*
+	fprintf(stderr, "remove_conn() %d, before:\n", c->fd);
+	list_conn();
+	*/
+
 	if(g_hd==NULL) return;
 	if(c->fd == g_hd->fd) {
 		g_hd=c->next;
@@ -98,6 +120,11 @@ void remove_conn(struct conn *c) {
 			}
 		}
 	}
+
+	/*
+	fprintf(stderr, "remove_conn(), after:\n");
+	list_conn();
+	*/
 }
 
 void accept_new(int epollfd, int s) {
@@ -115,22 +142,26 @@ void accept_new(int epollfd, int s) {
 	insert_conn(cc);
 }
 
-void destroy_conn(struct conn* c) {
+void destroy_half_conn(struct conn *c) {
 	if(c==NULL) return;
+	// remove from remaining of event queue
+	for(int i=curevent+1; i<nevents; i++)
+		if(events[i].data.ptr==c)
+			events[i].data.ptr=NULL;
 	if(c->fd > 0) {
 		shutdown(c->fd, SHUT_RDWR);
 		close(c->fd);
 	}
+	if(c->other)
+		c->other->other=NULL;
 	remove_conn(c);
-	if(c->other) {
-		if(c->other->fd > 0) {
-			shutdown(c->other->fd, SHUT_RDWR);
-			close(c->other->fd);
-		}
-		remove_conn(c->other);
-		free(c->other);
-	}
 	free(c);
+}
+
+void destroy_conn(struct conn* c) {
+	if(c==NULL) return;
+	if(c->other!=NULL) destroy_half_conn(c->other);
+	destroy_half_conn(c);
 }
 
 int isspc(char c) {
@@ -264,35 +295,34 @@ int search_bind_localsock(struct conn *c, char *appname, int argc, char **argv, 
 }
 
 void garbage_collect(void) {
-	time_t now=time(NULL);
-	fprintf(stderr, "garbage collect...\n");
 	if(g_hd==NULL) {
-		fprintf(stderr, "no conn\n");
+		fprintf(stderr, "gc: no conn\n");
 		return;
 	}
-	struct conn *e;
-	for(e=g_hd; e->next!=NULL; e=e->next) {
-		fprintf(stderr, " connection %d, created %ld s ago\n", e->fd, now - e->created);
+
+	time_t now=time(NULL);
+	struct conn *e, *en; 
+
+/*
+	fprintf(stderr, "before gc:\n");
+	list_conn();
+*/
+
+	for(e=g_hd; e!=NULL; ) {
 		if(now - e->created > GC_TIMEOUT) {
-			fprintf(stderr, "   killing connection on fd %d\n", e->fd);
-			if(e->other) {
-				fprintf(stderr,"   (and %d)\n", e->other->fd);
-			}
-			destroy_conn(e);
+			//fprintf(stderr, "   killing connection on fd %d\n", e->fd);
+			en=e->next;
+			destroy_half_conn(e);
+			e=en;
+		} else {
+			e=e->next;
 		}
 	}
 
+/*
 	fprintf(stderr, "after gc:\n");
-	if(g_hd==NULL) {
-		fprintf(stderr, "no conn\n");
-		return;
-	}
-	for(e=g_hd; e->next!=NULL; e=e->next) {
-		fprintf(stderr, " connection %d, created %ld s ago\n", e->fd, now - e->created);
-		if(e->other) {
-			fprintf(stderr, "   (bound to %d)\n", e->other->fd);
-		}
-	}
+	list_conn();
+	*/
 }
 
 int main(int argc, char **argv) {
@@ -301,7 +331,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	int s=listen_sock((uint16_t)atoi(argv[1]));
-	struct epoll_event ev, events[MAXEVENTS];
+	struct epoll_event ev;
 	int epollfd=epoll_create(1);
 	if(epollfd<0) { perror("epoll_create"); exit(1); }
 	ev.events=EPOLLMASK;
@@ -323,19 +353,24 @@ int main(int argc, char **argv) {
 	while(1) {
 		int wstatus;
 		waitpid(-1, &wstatus, WNOHANG);
-		int nfds=epoll_wait(epollfd, events, MAXEVENTS, -1);
-		if(nfds<0) { perror("epoll_wait"); exit(1); }
-		for(int n=0; n<nfds; n++) {
-			if(events[n].data.fd==s) {
+		nevents=epoll_wait(epollfd, events, MAXEVENTS, -1);
+		if(nevents<0) { perror("epoll_wait"); exit(1); }
+		for(curevent=0; curevent<nevents; curevent++) {
+			if(events[curevent].data.fd==s) {
 				accept_new(epollfd, s);
-			} else if(events[n].data.fd==timerfd) {
+			} else if(events[curevent].data.fd==timerfd) {
 				uint64_t junk;
 				read(timerfd, &junk, 8);
 				garbage_collect();
 			} else {
-				struct conn *cc=(struct conn*)(events[n].data.ptr);
-				if(events[n].events != EPOLLIN) {
-				//	fprintf(stderr, "event not EPOLLIN\n");
+				struct conn *cc=(struct conn*)(events[curevent].data.ptr);
+				// destroy_conn() can be called and destroy a conn still in events
+				// this event will be marked as data.ptr==NULL
+				// else we need to set MAXEVENTS to 1
+				if(cc==NULL)
+					continue;
+				if(events[curevent].events != EPOLLIN) {
+					//fprintf(stderr, "event not EPOLLIN\n");
 					destroy_conn(cc);
 					continue;
 				}
