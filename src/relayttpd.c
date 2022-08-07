@@ -43,9 +43,8 @@
 #define REQSZ 512
 #define APPNAMESZ 24
 #define HOME "/tmp/index.html"
-#define MAXFD 8192
-#define GC_INTERVAL 3600
-#define GC_TIMEOUT 86400
+#define GC_INTERVAL 10
+#define GC_TIMEOUT 30
 
 #define ERRMSG "HTTP/1.1 400\r\nConnection: close\r\n\r\n400 Bad request"
 #define FORBIDMSG "HTTP/1.1 403\r\nConnection: close\r\n\r\n403 Forbidden"
@@ -60,11 +59,13 @@ struct conn {
 	char req[REQSZ]; // remote: head of request, local: appname
 	int reqsz; // -1: fd is local socket, >0: fd is remote socket
 	time_t created;
-	time_t last_seen;
+	//time_t last_seen;
 	int sure_bind; // -1: local socket, remote sockets: 0: bind unsure/not done, 1: bind sure until next server answer, 2: bind always sure
+	struct conn *next;
 };
 
-static struct conn* g_conns[MAXFD];
+static struct conn *g_hd; // pointer to head of global conn linked list 
+
 
 int listen_sock(uint16_t port) {
 	struct sockaddr_in addr;
@@ -79,20 +80,39 @@ int listen_sock(uint16_t port) {
 	return(s);
 }
 
+void insert_conn(struct conn *c) {
+	c->next=g_hd;
+	g_hd=c;
+}
+
+void remove_conn(struct conn *c) {
+	if(g_hd==NULL) return;
+	if(c->fd == g_hd->fd) {
+		g_hd=c->next;
+	} else {
+		struct conn *e;
+		for(e=g_hd; e->next!=NULL; e=e->next) {
+			if(e->next->fd==c->fd) {
+				e->next=c->next;
+				break;
+			}
+		}
+	}
+}
+
 void accept_new(int epollfd, int s) {
 	int cl_sock=accept(s, NULL, NULL);
 	if(cl_sock<0) { perror("accept"); return; }
-	if(cl_sock>MAXFD) { fprintf(stderr, "MAXFD reached\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
 	struct conn *cc=malloc(sizeof(struct conn));
 	if(cc==NULL) { fprintf(stderr, "malloc() failed\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
 	bzero(cc, sizeof(struct conn));
 	cc->fd=cl_sock;
-	cc->created=cc->last_seen=time(NULL);
+	cc->created /*=cc->last_seen*/ = time(NULL);
 	struct epoll_event ev;
 	ev.events=EPOLLMASK;
 	ev.data.ptr=(void*)cc;
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, cl_sock, &ev)<0) { perror("epoll_ctl"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
-	g_conns[cl_sock]=cc;
+	insert_conn(cc);
 }
 
 void destroy_conn(struct conn* c) {
@@ -100,14 +120,14 @@ void destroy_conn(struct conn* c) {
 	if(c->fd > 0) {
 		shutdown(c->fd, SHUT_RDWR);
 		close(c->fd);
-		g_conns[c->fd]=NULL;
 	}
+	remove_conn(c);
 	if(c->other) {
 		if(c->other->fd > 0) {
 			shutdown(c->other->fd, SHUT_RDWR);
 			close(c->other->fd);
-			g_conns[c->other->fd]=NULL;
 		}
+		remove_conn(c->other);
 		free(c->other);
 	}
 	free(c);
@@ -198,8 +218,9 @@ int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int e
 			return(-1);
 		}
 		c->other->other=c;
-		c->other->created=c->other->last_seen=time(NULL);
+		c->other->created= /* c->other->last_seen=*/ time(NULL);
 		c->other->sure_bind=-1;
+		insert_conn(c->other);
 	}
 	c->other->fd=-1;
 	strlcpy(c->other->req, appname, APPNAMESZ);
@@ -224,11 +245,6 @@ int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int e
 		perror("epoll_ctl");
 		return(-1);
 	}
-	if(c->other->fd > MAXFD) {
-		fprintf(stderr,"MAXFD reached\n");
-		return(-1);
-	}
-	g_conns[c->other->fd]=c->other;
 	return(0);
 }
 
@@ -250,16 +266,31 @@ int search_bind_localsock(struct conn *c, char *appname, int argc, char **argv, 
 void garbage_collect(void) {
 	time_t now=time(NULL);
 	fprintf(stderr, "garbage collect...\n");
-	for(int i=0; i<MAXFD; i++) {
-		if(g_conns[i]!=NULL) {
-			fprintf(stderr, " connection %d, created %d s ago\n", i, now-g_conns[i]->created);
-			if(g_conns[i]->created+GC_TIMEOUT<now) {
-				fprintf(stderr, "   killing connection on fd %d\n", i);
-				if(g_conns[i]->other) {
-					fprintf(stderr,"   (and %d)\n", g_conns[i]->other->fd);
-				}
-				destroy_conn(g_conns[i]);
+	if(g_hd==NULL) {
+		fprintf(stderr, "no conn\n");
+		return;
+	}
+	struct conn *e;
+	for(e=g_hd; e->next!=NULL; e=e->next) {
+		fprintf(stderr, " connection %d, created %ld s ago\n", e->fd, now - e->created);
+		if(now - e->created > GC_TIMEOUT) {
+			fprintf(stderr, "   killing connection on fd %d\n", e->fd);
+			if(e->other) {
+				fprintf(stderr,"   (and %d)\n", e->other->fd);
 			}
+			destroy_conn(e);
+		}
+	}
+
+	fprintf(stderr, "after gc:\n");
+	if(g_hd==NULL) {
+		fprintf(stderr, "no conn\n");
+		return;
+	}
+	for(e=g_hd; e->next!=NULL; e=e->next) {
+		fprintf(stderr, " connection %d, created %ld s ago\n", e->fd, now - e->created);
+		if(e->other) {
+			fprintf(stderr, "   (bound to %d)\n", e->other->fd);
 		}
 	}
 }
@@ -308,7 +339,7 @@ int main(int argc, char **argv) {
 					destroy_conn(cc);
 					continue;
 				}
-				cc->last_seen=time(NULL);
+				//cc->last_seen=time(NULL);
 				char buf[4096];
 				char appname[APPNAMESZ], translated_req[REQSZ];
 				int nr, rc, translated_req_length;
