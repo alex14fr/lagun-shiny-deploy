@@ -5,15 +5,19 @@ rm -rf /var/run/*
 cat > /tmp/index.html << EOF
 <!doctype html>
 <meta name=viewport content=width=device-width>
-<title>Shiny</title>
+<title>R/Shiny @ GdR MASCOT-NUM</title>
+<a href=https://github.com/alex14fr/lagun-shiny-deploy/blob/master/README>README</a><p>
 <a href=lagun/>LAGUN</a><p>
+<a herf=terminal/>R terminal</a><p>
+<!--
 <a href=testapp/>Test application</a><p>
+-->
 <details><summary style=cursor:pointer>System info</summary>
 <pre>
 Server started $(date)
 EOF
 /opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" >> /tmp/index.html
-echo "</pre></details><p><a href=https://github.com/alex14fr/lagun-shiny-deploy>Server source code</a>" >> /tmp/index.html
+echo "</pre></details>" >> /tmp/index.html
 mkdir /tmp/cache
 Xvfb :999&
 sleep 1
@@ -21,6 +25,7 @@ args=""
 mkdir /tmp/priv
 pp=1234
 for d in /apps/* ; do
+	[ -f $d/off ] && continue
 	a=$(basename $d)
 	mkdir /tmp/priv/$a
 	mkdir /tmp/priv/$a/.X11-unix
