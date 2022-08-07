@@ -1,12 +1,49 @@
-{ "ociVersion": "0.1.0",
-  "root": { "path": "rootfs", "readonly": false },
-  "mounts": [ { "source": "none", "destination": "/proc", "type": "proc" },
-  				  { "source": "none", "destination": "/dev/pts", "type": "devpts" },
-              { "source": "none", "destination": "/tmp", "type": "tmpfs" } ],
-  "process": { "cwd": "/", "args": [ "/bin/ttyd", "/bin/sh" ] },
-  "user": { "uid": 1000, "gid": 1000 },
-  "linux": { "namespaces": [ { "type": "pid" },
-  									  { "type": "ipc" },
-									  { "type": "user" },
-									  { "type": "mount" },
-									  { "type": "uts" } ] } }
+{
+  "ociVersion": "0.1.0",
+  "root": {
+    "path": "rootfs",
+    "readonly": false
+  },
+  "mounts": [
+    {
+      "source": "none",
+      "destination": "/proc",
+      "type": "proc"
+    },
+    {
+      "source": "none",
+      "destination": "/dev/pts",
+      "type": "devpts"
+    }
+  ],
+  "process": {
+    "cwd": "/",
+    "args": [
+      "/entry_multi"
+    ],
+    "capabilities": {
+      "bounding": [
+        "CAP_SETFCAP"
+      ]
+    }
+  },
+  "linux": {
+    "namespaces": [
+      {
+        "type": "pid"
+      },
+      {
+        "type": "ipc"
+      },
+      {
+        "type": "user"
+      },
+      {
+        "type": "mount"
+      },
+      {
+        "type": "uts"
+      }
+    ]
+  }
+}

@@ -22,7 +22,7 @@ from CRAN other than the preinstalled packages).
   <li> The launcher for this app is in apps/terminal/launch0, it calls utility programs in src/dropcap-inner.c and src/dropcap-outer.c for setting up the namespaces, filesystem layout and capabilities.
   <li> R integrated help is stripped to save space; you are supposed to have an online browser anyway.
   </ul>
-Each app is run in a separate container; it consists of an R process (or 
+Each app is run in a separate container (see src/dropcap*.c) ; it consists of an R process (or 
 ttyd process) listening on a Unix domain socket. <p>
     An HTTP frontend server (source in src/relayttpd.c) dispatches 
 requests from outside TCP connections to these Unix sockets, depending on the 
@@ -41,12 +41,12 @@ To run this server on your premises (Linux only), you may download the prebuilt 
 <pre>
 $ tar xf shiny-rootfs.tar.xz
 $ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
-$ ./99_enter_pivotroot /entry_multi # or use your favorite container runtime
+$ ./99_enter_pivotroot /entry_multi 
 </pre>
 
-or use the included Dockerfile.<p>
+Alternatively, there is an <a href=https://specs.opencontainers.org/runtime-spec/config/>OCI runtime</a>-compliant config.json to run from the untarred rootfs (using, for instance <a href=https://github.com/containers/crun>crun</a>). Or use the included Dockerfile to create a single-layer container from the prebuilt rootfs.<p>
 
-You can customize the apps in the "/apps" directory of the rootfs. A template "testapp" is included, remove the "off" file to get it run.
+You can customize the apps in the "/apps" directory of the rootfs. A template Shiny app "testapp" is included, remove the "off" file to get it run.
 
 The rootfs can also be built with<p>
 
