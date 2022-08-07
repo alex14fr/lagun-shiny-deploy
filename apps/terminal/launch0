@@ -1,11 +1,12 @@
 #!/bin/sh
 mkdir /tmp/priv/terminal/mpriv
 cp /tmp/priv/terminal/launch /tmp/priv/terminal/mpriv/
+ttyd_options="-O -P 140 -t titleFixed=Terminal -t disableLeaveAlert=false"
 unshare -rpmf /bin/sh -c "mount --bind /apps/terminal /apps; \
                           mount --bind /tmp/priv/terminal /tmp; \
 								  cd /tmp; \
 								  exec unshare -rpmfin \
-								     ttyd -O -i /tmp/x.sock \
+								     ttyd $ttyd_options -i /tmp/x.sock \
 									      unshare -rpmf \
 											/bin/sh -c \"z=\\\$(date +%s)\\\$\\\$; \
 											             mkdir /tmp/priv\\\$z; \
