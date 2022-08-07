@@ -161,12 +161,14 @@ int try_serve_cache(struct conn *c, char *appname, char *translated_req, int tra
 					memmem(translated_req,translated_req_len,"gzip",4)!=NULL) {
 			int fd=open(buf,O_RDONLY);
 			sendfile(c->fd, fd, 0, sbuf.st_size);
+			close(fd);
 			return(0);
 		}
 		snprintf(buf, 256, "/tmp/cache/%s.html", appname);
 		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0) {
 			int fd=open(buf,O_RDONLY);
 			sendfile(c->fd, fd, 0, sbuf.st_size);
+			close(fd);
 			return(0);
 		}
 	}
