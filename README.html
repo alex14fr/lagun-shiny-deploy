@@ -20,6 +20,7 @@ directory lives no more than 25 hours.
 from CRAN other than the preinstalled packages).
   <li> Each terminal session runs in a separate container.
   <li> The launcher for this app is in apps/terminal/launch0.
+  <li> R integrated help is stripped to save space; you are supposed to have an online browser anyway.
   </ul>
 Each app is run in a separate container; it consists of an R process (or 
 ttyd process) listening on a Unix domain socket. <p>
