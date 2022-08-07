@@ -5,10 +5,11 @@ rm -rf /var/run/*
 cat > /tmp/index.html << EOF
 <!doctype html>
 <meta name=viewport content=width=device-width>
-<title>R/Shiny @ GdR MASCOT-NUM</title>
+<title>R/Shiny/Lagun @ GdR MASCOT-NUM</title>
+<a href=https://www.gdr-mascotnum.fr target=_blank><img alt="GDR MASCOT-NUM" width=183 height=69 src=https://www.gdr-mascotnum.fr/static/logo.webp?v4></a><p>
 <a href=https://github.com/alex14fr/lagun-shiny-deploy/blob/master/README target=_blank>README</a><p>
-<a href=lagun/>LAGUN</a><p>
-<a href=terminal/>R terminal</a><p>
+<a href=lagun/>LAGUN : Platform for Exploration and Analysis of Datasets</a><p>
+<a href=terminal/>R Terminal</a><p>
 <!--
 <a href=testapp/>Test application</a><p>
 -->
@@ -18,7 +19,7 @@ cat > /tmp/index.html << EOF
 <pre>
 Server started $(date)
 EOF
-/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" | awk '{ if($0 ~ /  / && $0 !~ /\d/) { gsub(/(\w+)/,"<a href=https://cran.r-project.org/web/packages/&/ target=_blank>&</a>"); } print $0; }' >> /tmp/index.html
+/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" | awk '{ if($0 ~ /  / && $0 !~ /\"/) { gsub(/(\w+)/,"<a href=https://cran.r-project.org/web/packages/&/ target=_blank>&</a>"); } if($0 != "> ") { print $0; } }' >> /tmp/index.html
 echo "</pre> <!--</details>-->" >> /tmp/index.html
 mkdir /tmp/cache
 Xvfb :999&
