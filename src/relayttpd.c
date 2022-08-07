@@ -43,8 +43,15 @@
 #define REQSZ 512
 #define APPNAMESZ 24
 #define HOME "/tmp/index.html"
+//#define GCTEST
+#ifdef GCTEST
+#define GC_INTERVAL 5
+#define GC_TIMEOUT 20
+#define GC_VERBOSE
+#else
 #define GC_INTERVAL 3600
 #define GC_TIMEOUT 86400
+#endif
 
 #define ERRMSG "HTTP/1.1 400\r\nConnection: close\r\n\r\n400 Bad request"
 #define FORBIDMSG "HTTP/1.1 403\r\nConnection: close\r\n\r\n403 Forbidden"
@@ -103,10 +110,10 @@ void list_conn(void) {
 }
 
 void remove_conn(struct conn *c) {
-	/*
+#ifdef GC_VERBOSE
 	fprintf(stderr, "remove_conn() %d, before:\n", c->fd);
 	list_conn();
-	*/
+#endif
 
 	if(g_hd==NULL) return;
 	if(c->fd == g_hd->fd) {
@@ -121,10 +128,10 @@ void remove_conn(struct conn *c) {
 		}
 	}
 
-	/*
+#ifdef GC_VERBOSE
 	fprintf(stderr, "remove_conn(), after:\n");
 	list_conn();
-	*/
+#endif
 }
 
 void accept_new(int epollfd, int s) {
@@ -161,6 +168,7 @@ void destroy_half_conn(struct conn *c) {
 void destroy_conn(struct conn* c) {
 	if(c==NULL) return;
 	if(c->other!=NULL) destroy_half_conn(c->other);
+	c->other=NULL;
 	destroy_half_conn(c);
 }
 
@@ -303,14 +311,16 @@ void garbage_collect(void) {
 	time_t now=time(NULL);
 	struct conn *e, *en; 
 
-/*
+#ifdef GC_VERBOSE
 	fprintf(stderr, "before gc:\n");
 	list_conn();
-*/
+#endif
 
 	for(e=g_hd; e!=NULL; ) {
 		if(now - e->created > GC_TIMEOUT) {
-			//fprintf(stderr, "   killing connection on fd %d\n", e->fd);
+#ifdef GC_VERBOSE
+			fprintf(stderr, "   killing connection on fd %d\n", e->fd);
+#endif
 			en=e->next;
 			destroy_half_conn(e);
 			e=en;
@@ -319,10 +329,10 @@ void garbage_collect(void) {
 		}
 	}
 
-/*
+#ifdef GC_VERBOSE
 	fprintf(stderr, "after gc:\n");
 	list_conn();
-	*/
+#endif
 }
 
 int main(int argc, char **argv) {
