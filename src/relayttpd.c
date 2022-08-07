@@ -41,7 +41,11 @@
 
 #define MAXEVENTS 10
 #define REQSZ 512
+#define APPNAMESZ 24
 #define HOME "/tmp/index.html"
+#define MAXFD 8192
+#define GC_INTERVAL 3600
+#define GC_TIMEOUT 86400
 
 #define ERRMSG "HTTP/1.1 400\r\nConnection: close\r\n\r\n400 Bad request"
 #define FORBIDMSG "HTTP/1.1 403\r\nConnection: close\r\n\r\n403 Forbidden"
@@ -60,6 +64,7 @@ struct conn {
 	int sure_bind; // -1: local socket, remote sockets: 0: bind unsure/not done, 1: bind sure until next server answer, 2: bind always sure
 };
 
+static struct conn* g_conns[MAXFD];
 
 int listen_sock(uint16_t port) {
 	struct sockaddr_in addr;
@@ -77,6 +82,7 @@ int listen_sock(uint16_t port) {
 void accept_new(int epollfd, int s) {
 	int cl_sock=accept(s, NULL, NULL);
 	if(cl_sock<0) { perror("accept"); return; }
+	if(cl_sock>MAXFD) { fprintf(stderr, "MAXFD reached\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
 	struct conn *cc=malloc(sizeof(struct conn));
 	if(cc==NULL) { fprintf(stderr, "malloc() failed\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
 	bzero(cc, sizeof(struct conn));
@@ -86,6 +92,7 @@ void accept_new(int epollfd, int s) {
 	ev.events=EPOLLMASK;
 	ev.data.ptr=(void*)cc;
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, cl_sock, &ev)<0) { perror("epoll_ctl"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
+	g_conns[cl_sock]=cc;
 }
 
 void destroy_conn(struct conn* c) {
@@ -93,11 +100,13 @@ void destroy_conn(struct conn* c) {
 	if(c->fd > 0) {
 		shutdown(c->fd, SHUT_RDWR);
 		close(c->fd);
+		g_conns[c->fd]=NULL;
 	}
 	if(c->other) {
 		if(c->other->fd > 0) {
 			shutdown(c->other->fd, SHUT_RDWR);
 			close(c->other->fd);
+			g_conns[c->other->fd]=NULL;
 		}
 		free(c->other);
 	}
@@ -118,7 +127,7 @@ int try_parse_appname(struct conn* c, char *appname, char *translated_req, int *
 
 	int i=0;
 	bzero(translated_req, REQSZ); 
-	bzero(appname, 24);
+	bzero(appname, APPNAMESZ);
 	while(i<c->reqsz && i<REQSZ && isspc(c->req[i])) i++;
 	while(i<c->reqsz && i<REQSZ && !isspc(c->req[i])) {
 		translated_req[i]=c->req[i];
@@ -177,7 +186,7 @@ int try_serve_cache(struct conn *c, char *appname, char *translated_req, int tra
 
 int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int epollfd) {
 	if(c->sure_bind!=0) return(0);
-	if(c->other!=NULL && strncmp(appname, c->other->req, 24)==0) return(0); // already bound to the right local socket
+	if(c->other!=NULL && strncmp(appname, c->other->req, APPNAMESZ)==0) return(0); // already bound to the right local socket
 	if(c->other!=NULL && c->other->fd > 0) {
 		// unbind 
 		close(c->other->fd);
@@ -193,7 +202,7 @@ int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int e
 		c->other->sure_bind=-1;
 	}
 	c->other->fd=-1;
-	strlcpy(c->other->req, appname, 24);
+	strlcpy(c->other->req, appname, APPNAMESZ);
 	c->sure_bind=1;
 	c->other->fd=socket(AF_UNIX, SOCK_STREAM, 0);
 	if(c->other->fd < 0) { 
@@ -215,6 +224,11 @@ int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int e
 		perror("epoll_ctl");
 		return(-1);
 	}
+	if(c->other->fd > MAXFD) {
+		fprintf(stderr,"MAXFD reached\n");
+		return(-1);
+	}
+	g_conns[c->other->fd]=c->other;
 	return(0);
 }
 
@@ -225,12 +239,29 @@ int search_bind_localsock(struct conn *c, char *appname, int argc, char **argv, 
 	int n=0;
 	while(n<argc) {
 		int nn;
-		for(nn=0; nn<strlen(appname) && nn<strlen(argv[n]) && nn<24 && argv[n][nn]!=':' && appname[nn]==argv[n][nn]; nn++) ;
+		for(nn=0; nn<strlen(appname) && nn<strlen(argv[n]) && nn<APPNAMESZ && argv[n][nn]!=':' && appname[nn]==argv[n][nn]; nn++) ;
 		if(nn==strlen(appname) && nn<strlen(argv[n]) && argv[n][nn]==':') 
 			return(bind_localsock(c, appname, argv[n]+nn+1, epollfd));
 		n++;
 	}
 	return(-2);
+}
+
+void garbage_collect(void) {
+	time_t now=time(NULL);
+	fprintf(stderr, "garbage collect...\n");
+	for(int i=0; i<MAXFD; i++) {
+		if(g_conns[i]!=NULL) {
+			fprintf(stderr, " connection %d, created %d s ago\n", i, now-g_conns[i]->created);
+			if(g_conns[i]->created+GC_TIMEOUT<now) {
+				fprintf(stderr, "   killing connection on fd %d\n", i);
+				if(g_conns[i]->other) {
+					fprintf(stderr,"   (and %d)\n", g_conns[i]->other->fd);
+				}
+				destroy_conn(g_conns[i]);
+			}
+		}
+	}
 }
 
 int main(int argc, char **argv) {
@@ -248,17 +279,16 @@ int main(int argc, char **argv) {
 		perror("epoll_ctl");
 		exit(1);
 	}
-	/*
 	int timerfd=timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
 	struct itimerspec itmsp;
-	itmsp.it_interval.tv_sec=60;
-	itmsp.it_value.tv_sec=60;
+	itmsp.it_interval.tv_sec=GC_INTERVAL;
+	itmsp.it_value.tv_sec=GC_INTERVAL;
 	timerfd_settime(timerfd, 0, &itmsp, NULL);
 	ev.data.fd=timerfd;
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, timerfd, &ev)<0) {
 		perror("epoll_ctl");
 		exit(1);
-	} */
+	} 
 	while(1) {
 		int wstatus;
 		waitpid(-1, &wstatus, WNOHANG);
@@ -267,10 +297,11 @@ int main(int argc, char **argv) {
 		for(int n=0; n<nfds; n++) {
 			if(events[n].data.fd==s) {
 				accept_new(epollfd, s);
-			} /* else if(events[n].data.fd==timerfd) {
+			} else if(events[n].data.fd==timerfd) {
 				uint64_t junk;
 				read(timerfd, &junk, 8);
-			} */ else {
+				garbage_collect();
+			} else {
 				struct conn *cc=(struct conn*)(events[n].data.ptr);
 				if(events[n].events != EPOLLIN) {
 				//	fprintf(stderr, "event not EPOLLIN\n");
@@ -279,7 +310,7 @@ int main(int argc, char **argv) {
 				}
 				cc->last_seen=time(NULL);
 				char buf[4096];
-				char appname[24], translated_req[REQSZ];
+				char appname[APPNAMESZ], translated_req[REQSZ];
 				int nr, rc, translated_req_length;
 				if(cc->sure_bind==0) {
 					// read from remote, not bound (or unsure) to local socket
@@ -314,6 +345,7 @@ int main(int argc, char **argv) {
 								write(cc->fd, buf, ww);
 								int fd=open(HOME, O_RDONLY);
 								sendfile(cc->fd, fd, 0, stbuf.st_size);
+								close(fd);
 								continue;
 							}
 							continue;
