@@ -11,7 +11,7 @@ cp entry* rootfs/
 cp -a apps rootfs/
 mkdir rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
 cd build_chroot
-cp src/relayttpd src/httpget ../rootfs/
+cp bin/relayttpd bin/httpget bin/dropcap-inner bin/dropcap-outer ../rootfs/bin
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
 rsync -av --exclude=.git lagun/lagun ../rootfs/apps/
 touch ../rootfs/apps/lagun/no_home_cache

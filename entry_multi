@@ -49,11 +49,11 @@ EOF
 		/tmp/priv/$a/launch0 &
 	fi
 	if [ ! -e /apps/$a/no_home_cache ]; then
-		/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &
-		/httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html &
+		/bin/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &
+		/bin/httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html &
 	fi
 	pp=$(($pp+1))
 done
 ( while [ true ]; do sleep 3600;  find /tmp/priv/terminal/priv* -ctime +1 -delete; done ) &
-exec env -i /relayttpd 8080 $args
+exec env -i /bin/relayttpd 8080 $args
 
