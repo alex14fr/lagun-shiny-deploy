@@ -30,19 +30,19 @@ for d in /apps/* ; do
 	[ -f $d/off ] && continue
 	a=$(basename $d)
 	mkdir /tmp/priv/$a
-	args="$args $a:/tmp/priv/$a/x.sock"
+	args="$args $a:/tmp/priv/$a/www.sock"
 	if [ ! -f /apps/$a/launch0 ]; then
 		mkdir /tmp/priv/$a/.X11-unix
 		ln /tmp/.X11-unix/X999 /tmp/priv/$a/.X11-unix/X999
-		env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so dropcap-simple $a R --vanilla -e 'p="/tmp/x.sock"; attr(p, "mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)'  &
+		env -i DISPLAY=:999 HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so dropcap-simple $a R --vanilla -e 'p="/tmp/www.sock"; attr(p, "mask")=strtoi("117",8); shiny::runApp("app.R", port=p, launch.browser=F)'  &
 	else
 		cp /apps/$a/launch0 /tmp/priv/$a/launch0
 		chmod a+x /tmp/priv/$a/launch0
 		env -i HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/R/bin LD_PRELOAD=libexecinfo.so /tmp/priv/$a/launch0 &
 	fi
 	if [ ! -f /apps/$a/no_home_cache ]; then
-		/bin/httpget /tmp/priv/$a/x.sock 30 gzip > /tmp/cache/$a.html.gz &
-		/bin/httpget /tmp/priv/$a/x.sock 30 > /tmp/cache/$a.html &
+		/bin/httpget /tmp/priv/$a/www.sock 30 gzip > /tmp/cache/$a.html.gz &
+		/bin/httpget /tmp/priv/$a/www.sock 30 > /tmp/cache/$a.html &
 	fi
 done
 cleanfiles &

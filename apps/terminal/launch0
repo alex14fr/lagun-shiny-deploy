@@ -1,4 +1,4 @@
 #!/bin/sh
 ttyd_options="-O -P 140 -t titleFixed=Terminal"
-exec dropcap-outer ttyd $ttyd_options -i /tmp/x.sock dropcap-inner R --vanilla
+exec dropcap-outer ttyd $ttyd_options -i /tmp/www.sock dropcap-inner R --vanilla
 
