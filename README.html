@@ -40,9 +40,9 @@ start up.
 To run this server on your premises (Linux only), you may download the prebuilt x86_64 rootfs file at <a href=https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>shiny-rootfs.tar.xz</a>, then use<p>
 
 <pre>
-   $ tar xf shiny-rootfs.tar.xz
-   $ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
-   $ ./99_enter_pivotroot /entry_multi # or use your favorite container runtime
+$ tar xf shiny-rootfs.tar.xz
+$ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
+$ ./99_enter_pivotroot /entry_multi # or use your favorite container runtime
 </pre>
 
 or use the included Dockerfile.<p>
@@ -52,12 +52,12 @@ You can customize the apps in the "/apps" directory of the rootfs. A template "t
 The rootfs can also be built with<p>
 
 <pre>
-   # create the <a href=https://alpinelinux.org>Alpine Linux</a> build chroot
-   $ ./01_mkbuild
-   # build R and required R packages
-	$ ./02_build
-   # extract files in distroless rootfs
-	$ ./03_mkroot
+# create the <a href=https://alpinelinux.org>Alpine Linux</a> build chroot
+$ ./01_mkbuild
+# build R and required R packages
+$ ./02_build
+# extract files in distroless rootfs
+$ ./03_mkroot
 </pre>
 
 root privileges are required to create some special nodes in /dev/
