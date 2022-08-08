@@ -1,94 +1,132 @@
-   This server runs multiple apps:
+This server runs multiple R apps: Lagun and a R terminal.
 
-   [1]Lagun with the following changes (see files in lagun-mod/):
-     * don't use renv; all dependencies are at their latest version on
-       CRAN
-     * send keepalive messages on the websocket every 140 s
-     * replace fOptions package for quasi-random sequences
+LAGUN <https://gitlab.com/drti/lagun>
 
-   an R terminal in apps/terminal:
-     * uses [2]ttyd and provides you with an R terminal on the web
-     * if needed use system("sh") to go to a shell prompt.
-     * it supports sending/receiving files via ZMODEM (use system("lrz"),
-       resp. system("lsz ") at the R prompt to receive/send files from
-       your browser). Use it to import your R code/data and export your
-       plots and computation results. Only /tmp is writable, and this
-       directory lives no more than 25 hours (change this in entry file
-       and src/cleanfiles.c if you want).
-     * No network access is permitted in this app (so no install.packages
-       from CRAN other than the preinstalled packages).
-     * Each terminal session runs in a separate container. Files are
-       separated between sessions. If you don't want this, there is a
-       "shared_files_terminal" applications in apps/ that you can run by
-       removing the "off" file in its directory. In this shared mode, even
-       the pseudo tty files are readable and writable.
-     * The launcher for this app is in apps/terminal/launch0, it calls
-       utility programs in src/dropcap-inner.c and src/dropcap-outer.c for
-       setting up the namespaces, filesystem layout and capabilities.
-     * R integrated help is stripped to save space; you are supposed to
-       have an online browser anyway.
+The following changes are applied :
 
-   Each app is run in a separate container (see src/dropcap*.c) ; it
-   consists of an R process (or ttyd process) listening on a Unix domain
-   socket.
+- don't use renv; all dependencies are at their latest version on
+CRAN
 
-   An HTTP frontend server (source in src/relayttpd.c) dispatches requests
-   from outside TCP connections to these Unix sockets, depending on the
-   leading directory of the requested URL. The correspondance between
-   leading directories and Unix sockets is given on the command line (see
-   variable args in the entry file).
+- send keepalive messages on the websocket every 140 s
 
-   This server also serves a static HTML page (in /tmp/index.html,
-   generated in /entry) as home page, and supports cacheing of the
-   homepages of each app (src/httpget.c, triggered by /entry, is used to
-   populate this cache, in plain and gzip encoding variants). Some apps
-   may not support it, it can be disabled by leaving a file named
-   "no_home_cache" in the app directory.
-   To run this server on your premises (Linux only), you may download the
-   prebuilt x86_64 rootfs file at [3]shiny-rootfs.tar.xz, then use
+- replace fOptions package for quasi-random sequences
 
-$ mkdir rootfs
-$ tar xf shiny-rootfs.tar.xz -C rootfs
-$ ./99_enter_pivotroot /entry
+See files in the lagun-mod directory.
 
-   Alternatively, there is an [4]OCI runtime-compliant config.json to run
-   from the untarred rootfs (using, for instance [5]crun). Or use the
-   included Dockerfile to create a single-layer container from the
-   prebuilt rootfs.
+R terminal
 
-   You can customize the apps in the "/apps" directory of the rootfs. A
-   template Shiny app "testapp" is included, remove the "off" file to get
-   it run. The rootfs can also be built (x86_64 only) with
+- Uses ttyd <https://tsl0922.github.io/ttyd/>  and  provides  you
+with an R terminal on the web.
 
-# create the [6]Alpine Linux build chroot
-$ ./01_mkbuild
-# build R and required R packages
-$ ./02_build
-# extract files in distroless rootfs
-$ ./03_mkroot
+- If needed use system("sh") to go to a shell prompt.
 
-   The build is not made in a safe container (no pivot_root/umount, no
-   capability drop, no seccomp, no IPC/network isolation...), don't run it
-   as privilegied user.
+-  It  supports   sending/receiving   files   via   ZMODEM   (use
+system("lrz"),  resp.  system("lsz  <file>")  at  the R prompt to
+receive/send files from your browser). Use it to  import  your  R
+code/data and export your plots and computation results.
 
-   Dependencies for the build: Linux kernel with namespaces (mount, user,
-   PID), usual utilities (including unshare(1)), wget, git, rsync.
+- Only /tmp is writable, and this directory lives no more than 25
+hours  (change  this  in  entry  file and src/cleanfiles.c if you
+want).
 
-   R configure flags are defined in x02_buildR, you may want to review and
-   change them if you want to use a specific BLAS or enable OpenMP for
-   multithreading.
+-  No  network  access  is  permitted  in   this   app   (so   no
+install.packages from CRAN other than the preinstalled packages).
 
-   [7]Main source repository
+- Each terminal session runs in a separate container.  Files  are
+separated  between  sessions.  If you don't want this, there is a
+"shared_files_terminal" applications in apps/ that you can run by
+removing  the  "off"  file in its directory. In this shared mode,
+even the pseudo tty files are readable and writable.
 
-   Author : [8]Alexandre Janon
+- The launcher for this app is in apps/terminal/launch0, it calls
+utility  programs  in src/dropcap-inner.c and src/dropcap-outer.c
+for setting up the namespaces, filesystem  layout  and  capabili-
+ties.
 
-References
+- R integrated help is stripped to save space; you  are  supposed
+to have an online browser anyway.
 
-   1. https://gitlab.com/drti/lagun
-   2. https://tsl0922.github.io/ttyd/
-   3. https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz
-   4. https://specs.opencontainers.org/runtime-spec/config/
-   5. https://github.com/containers/crun
-   6. https://alpinelinux.org/
-   7. https://github.com/alex14fr/lagun-shiny-deploy
-   8. mailto:alexandre[.]janon[at]universite-paris-saclay[.]fr
+See files in apps/terminal.
+
+CONTAINERIZATION
+
+-  Each  app  is  run   in   separate   Linux   namespaces   (see
+src/dropcap*.c)  ;  it consists of an R process (or ttyd process)
+listening on a Unix domain socket.
+
+- An HTTP frontend server (source in src/relayttpd.c)  dispatches
+requests  from  outside  TCP  connections  to these Unix sockets,
+depending on the leading directory  of  the  requested  URL.  The
+correspondance  between  leading  directories and Unix sockets is
+given on the command line (see variable args in the entry file).
+
+- This server also serves a static HTML page (in /tmp/index.html,
+generated  in  /entry) as home page, and supports cacheing of the
+homepages of each app (src/httpget.c,  triggered  by  /entry,  is
+used  to  populate  this  cache, in plain and gzip encoding vari-
+ants). Some apps may not support it, it can be disabled by  leav-
+ing a file named "no_home_cache" in the app directory.
+
+RUN ON YOUR PREMISES (Linux/x86_64 only)
+
+One option is to download the  prebuilt  x86_64  rootfs  file  at
+<https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>, then
+
+ $ mkdir rootfs
+ $ tar xf shiny-rootfs.tar.xz -C rootfs
+ $ ./99_enter_pivotroot /entry
+
+Alternatively,   there   is   an    OCI    runtime    config.json
+<https://specs.opencontainers.org/runtime-spec/config/>   to  run
+from   the   untarred   rootfs   (using,   for   instance    crun
+<https://github.com/containers/crun>).
+
+You can also use the included Dockerfile to create a single-layer
+container from the prebuilt rootfs.
+
+You can customize the  apps  in  the  "/apps"  directory  of  the
+rootfs.  A  template  Shiny app "testapp" is included, remove the
+"off" file to get it run.
+
+The rootfs can also be built (x86_64 only) with
+
+ # create the Alpine Linux <https://alpinelinux.org> build chroot
+ $ ./01_mkbuild
+ # build R and required R packages
+ $ ./02_build
+ # extract files in distroless rootfs
+ $ ./03_mkroot
+
+The build is not made in a safe container (no  pivot_root/umount,
+no  capability  drop,  no  seccomp, no IPC/network isolation...),
+don't run it as privilegied user.
+
+Dependencies for the build: Linux kernel with namespaces  (mount,
+user,  PID),  usual  utilities (including unshare(1)), wget, git,
+rsync.
+
+R configure flags are defined in x02_buildR, you may want to  re-
+view and change them if you want to use a specific BLAS or enable
+OpenMP for multithreading.
+
+
+Main   source   repository:   <https://github.com/alex14fr/lagun-
+shiny-deploy>
+
+Author : Alexandre Janon  <alexandre[.]janon[at]universite-paris-
+saclay[.]fr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
