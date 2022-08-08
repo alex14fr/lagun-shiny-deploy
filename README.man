@@ -3,6 +3,7 @@ This server runs multiple R apps: Lagun and a R terminal.
 
 .SH 
 LAGUN <https://gitlab.com/drti/lagun>
+.sp
 
 The following changes are applied :
 
@@ -16,6 +17,7 @@ See files in the lagun-mod directory.
 
 .SH
 R terminal
+.sp
 
 - Uses ttyd <https://tsl0922.github.io/ttyd/> and provides you with an R terminal on the web.
 
@@ -37,6 +39,7 @@ See files in apps/terminal.
 
 .SH
 CONTAINERIZATION
+.sp
 
 - Each app is run in separate Linux namespaces (see src/dropcap*.c) ; it consists of an R process (or ttyd process) listening on a Unix domain socket. 
 
@@ -46,6 +49,7 @@ CONTAINERIZATION
 
 .SH 
 RUN ON YOUR PREMISES (Linux/x86_64 only)
+.sp
 
 One option is to download the prebuilt x86_64 rootfs file at <https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>, then
 
