@@ -47,7 +47,8 @@
    To run this server on your premises (Linux only), you may download the
    prebuilt x86_64 rootfs file at [3]shiny-rootfs.tar.xz, then use
 
-$ tar xf shiny-rootfs.tar.xz
+$ mkdir rootfs
+$ tar xf shiny-rootfs.tar.xz -C rootfs
 $ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
 $ ./99_enter_pivotroot /entry
 
@@ -58,7 +59,7 @@ $ ./99_enter_pivotroot /entry
 
    You can customize the apps in the "/apps" directory of the rootfs. A
    template Shiny app "testapp" is included, remove the "off" file to get
-   it run. The rootfs can also be built with
+   it run. The rootfs can also be built (x86_64 only) with
 
 # create the [6]Alpine Linux build chroot
 $ ./01_mkbuild
