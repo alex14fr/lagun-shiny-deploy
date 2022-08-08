@@ -41,7 +41,6 @@ To run this server on your premises (Linux only), you may download the prebuilt 
 <pre>
 $ mkdir rootfs
 $ tar xf shiny-rootfs.tar.xz -C rootfs
-$ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
 $ ./99_enter_pivotroot /entry 
 </pre>
 
@@ -60,20 +59,17 @@ $ ./02_build
 $ ./03_mkroot
 </pre>
 
-root privileges are required to create some special nodes in /dev/
-(the scripts will use doas to do this, run them as normal user).<p>
-
 The build is not made in a safe container (no pivot_root/umount, no capability 
 drop, no seccomp, no IPC/network isolation...), don't run it as privilegied 
 user.<p>
 
 Dependencies for the build: Linux kernel with namespaces (mount, user, PID), usual utilities 
-(including unshare(1)), git, rsync, opendoas (or sudo symlinked to doas).<p>
+(including unshare(1)), wget, git, rsync.<p>
 
 R configure flags are defined in x02_buildR, you may want to review and change them if you want to use a specific BLAS or enable OpenMP for multithreading.<p>
 
 <a href=https://github.com/alex14fr/lagun-shiny-deploy>Main source repository</a><p>
-Author : <a href="mailto:alexandre[.]janon[at]u-psud[.]fr">Alexandre Janon</a>
+Author : <a href="mailto:alexandre[.]janon[at]universite-paris-saclay[.]fr">Alexandre Janon</a>
 
 
 

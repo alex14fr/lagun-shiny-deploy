@@ -23,7 +23,6 @@ rsync -a --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*.map' --exc
 cp -a bin ../rootfs/
 cd .. ; ./99_enter_rootfs /bin/busybox --install ; cd -
 ln -s /bin/busybox ../rootfs/usr/bin/env
-[ "$MAKEDEV" = "1" ] && doas cp -a dev/* ../rootfs/dev/
 cp -a usr/bin/Xvfb ../rootfs/bin/
 cp -a usr/bin/xkbcomp ../rootfs/usr/bin/
 cp -a lib/ld-musl* ../rootfs/lib/

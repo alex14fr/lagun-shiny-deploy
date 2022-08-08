@@ -1,3 +1,3 @@
 #!/bin/sh
 export LD_PRELOAD=libexecinfo.so
-unshare -m --mount-proc -p -U -r -f chroot rootfs $*
+unshare -rpmf chroot rootfs $*

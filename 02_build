@@ -1,7 +1,6 @@
 #!/bin/sh
-export PATH=$PATH:/sbin:/usr/sbin
-[ -e R_OK ] || ./99_enter_chroot /x02_buildR 
-./99_enter_chroot /x03_buildLagun
+[ -e R_OK ] || ./99_enter_buildchroot /x02_buildR 
+./99_enter_buildchroot /x03_buildLagun
 
 
 

@@ -1,6 +1,19 @@
 #!/bin/sh
-unshare -m --mount-proc -p -U -r -f /bin/sh -c "mount --bind rootfs rootfs ; mount -t devpts none rootfs/dev/pts ; mount -t proc none rootfs/proc ; pivot_root rootfs rootfs ; cd / ; umount -l / ; $*"&
+env -i HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin \
+     unshare -rpmf /bin/sh -c "for d in urandom random null full zero; do \
+                                 touch rootfs/dev/\$d; \
+								         mount --bind /dev/\$d rootfs/dev/\$d; \
+	      		                done; \
+			      					 mount -t devpts none rootfs/dev/pts ; \
+								   	 mount -t proc none rootfs/proc ; \
+								  	    mount --rbind rootfs rootfs ; \
+								  		 pivot_root rootfs rootfs ; \
+								 		 cd / ; \
+								  		 umount -l / ; \
+								  		 ln -sf /dev/pts/ptmx /dev/ptmx ; \
+										 chmod 0666 /dev/ptmx ; \
+								       $*"   &
 x=$?
-trap "kill -9 $x" INT
+trap "kill -9 $x ; rm rootfs/dev/*" INT
 wait
 

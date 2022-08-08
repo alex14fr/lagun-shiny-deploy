@@ -49,7 +49,6 @@
 
 $ mkdir rootfs
 $ tar xf shiny-rootfs.tar.xz -C rootfs
-$ doas cp -a /dev/*random /dev/ptmx rootfs/dev/
 $ ./99_enter_pivotroot /entry
 
    Alternatively, there is an [4]OCI runtime-compliant config.json to run
@@ -68,16 +67,12 @@ $ ./02_build
 # extract files in distroless rootfs
 $ ./03_mkroot
 
-   root privileges are required to create some special nodes in /dev/ (the
-   scripts will use doas to do this, run them as normal user).
-
    The build is not made in a safe container (no pivot_root/umount, no
    capability drop, no seccomp, no IPC/network isolation...), don't run it
    as privilegied user.
 
    Dependencies for the build: Linux kernel with namespaces (mount, user,
-   PID), usual utilities (including unshare(1)), git, rsync, opendoas (or
-   sudo symlinked to doas).
+   PID), usual utilities (including unshare(1)), wget, git, rsync.
 
    R configure flags are defined in x02_buildR, you may want to review and
    change them if you want to use a specific BLAS or enable OpenMP for
@@ -96,4 +91,4 @@ References
    5. https://github.com/containers/crun
    6. https://alpinelinux.org/
    7. https://github.com/alex14fr/lagun-shiny-deploy
-   8. mailto:alexandre[.]janon[at]u-psud[.]fr
+   8. mailto:alexandre[.]janon[at]universite-paris-saclay[.]fr

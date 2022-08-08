@@ -1,2 +1,0 @@
-export LD_PRELOAD=/usr/lib/libexecinfo.so
-unshare -m --mount-proc -p -U -r -f chroot build_chroot $*

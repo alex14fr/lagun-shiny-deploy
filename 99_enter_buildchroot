@@ -1,0 +1,11 @@
+#!/bin/sh
+dd=build_chroot
+env -i LD_PRELOAD=libexecinfo.so HOME=/tmp PATH=/bin:/sbin:/usr/bin:/usr/sbin \
+						unshare -rpmf /bin/sh -c "for d in urandom random null full zero; do \
+						touch $dd/dev/\$d; \
+						mount --bind /dev/\$d $dd/dev/\$d; \
+						done; \
+						mount -t devpts none $dd/dev/pts ; \
+						mount -t proc none $dd/proc ; \
+						ln -sf /dev/pts/ptmx $dd/dev/ptmx ; \
+						chroot $dd $* "
