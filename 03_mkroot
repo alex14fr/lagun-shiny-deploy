@@ -49,6 +49,5 @@ cd ..
 ./99_enter_rootfs chmod -R a+r .
 ./99_enter_rootfs chmod -R a+x bin/* sbin/* usr/bin/* usr/sbin/*
 ./99_enter_rootfs chmod -R a+w tmp var/tmp
-cd rootfs
-tar cv . |xz -9c > ../rootfs.tar.xz
+./99_enter_rootfs tar cv --numeric-owner / |xz -9c > rootfs.tar.xz
 
