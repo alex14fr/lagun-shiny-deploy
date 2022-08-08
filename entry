@@ -19,7 +19,7 @@ cat > /tmp/index.html << EOF
 <pre>
 Server started $(date)
 EOF
-/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" | awk '{ if($0 ~ /  / && $0 !~ /\"/) { gsub(/(\w+)/,"<a href=https://cran.r-project.org/web/packages/&/ target=_blank>&</a>"); } if($0 != "> ") { print $0; } }' >> /tmp/index.html
+/opt/R/bin/R --vanilla -e "installed.packages()[,'Version']" | awk '{ if($0 ~ /  / && $0 !~ /\"/) { gsub(/[.a-zA-Z0-9]+/,"<a href=https://cran.r-project.org/web/packages/&/ target=_blank>&</a>"); } if($0 != "> ") { print $0; } }' >> /tmp/index.html
 echo "</pre> <!--</details>-->" >> /tmp/index.html
 mkdir /tmp/cache
 Xvfb :999&
