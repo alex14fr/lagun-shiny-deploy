@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
 	mkdir("/dev",0777);
 	mkdir("/dev/pts",0777);
 	if(mount("/tmp/pts","/dev/pts",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind /dev/pts"); exit(1); }
+	//mount("/tmp", "/tmp", NULL, MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL);
+	//mount("/dev/pts", "/dev/pts", NULL, MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL);
 	prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 	prctl(PR_SET_SECUREBITS, SECBIT_KEEP_CAPS_LOCKED|SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED|SECBIT_NOROOT|SECBIT_NOROOT_LOCKED|SECBIT_NO_CAP_AMBIENT_RAISE|SECBIT_NO_CAP_AMBIENT_RAISE_LOCKED, 0, 0, 0);
 	for(int i=0;i<1024;i++) {

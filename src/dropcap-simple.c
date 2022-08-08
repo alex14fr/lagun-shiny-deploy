@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
 	mkdir(tmp,0777);
 	if(mount(tmp,"/var/run",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { }
 	if(mount(tmp,"/tmp",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
+	//mount("/tmp", "/tmp", NULL, MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL);
 	snprintf(tmp,256,"/apps/%s",argv[1]);
 	if(mount(tmp,"/apps",NULL,MS_PRIVATE|MS_BIND,NULL)<0) { perror("mount bind"); exit(1); }
 	prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
