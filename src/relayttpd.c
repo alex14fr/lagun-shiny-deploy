@@ -364,7 +364,7 @@ void writefile(struct conn *c, int fd, int size) {
 
 void writestr(struct conn *c, char *string) {
 #ifdef TLS
-	int ret, err;
+	int ret;
 	loop:
 	if((ret=SSL_write(c->ssl, string, strlen(string)))<0) {
 		int err=SSL_get_error(c->ssl, ret);
