@@ -24,7 +24,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>
-#define _GNU_SOURCE
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>

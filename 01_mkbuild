@@ -1,7 +1,8 @@
 #!/bin/sh
 set -x
-ALPINEVER=v3.16
-RVER=4.2.1
+ALPINEVER=v3.17
+RVER=4.2.2
+LAGUNVER=0.10.0
 RMAJOR=$(echo $RVER|cut -d. -f1)
 PATH=$PATH:/sbin:/usr/sbin
 export LDFLAGS=-s
@@ -25,11 +26,12 @@ cp -a src build_chroot/
 	mv R-$RVER.tar.gz build_chroot/
 }
 [ -d build_chroot/lagun ] || {
-	git clone --depth=1 https://gitlab.com/drti/lagun.git
-	mv lagun build_chroot/
+	wget https://gitlab.com/drti/lagun/-/archive/lagun_$LAGUNVER/lagun-lagun_$LAGUNVER.tar.bz2
+	tar jxf lagun-lagun_$LAGUNVER.tar.bz2
+	mv lagun-lagun_$LAGUNVER build_chroot/lagun
 }
 rm -fr lagun/documentation lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/tests
-cp lagun-mod/loadPackages.R lagun-mod/app.R build_chroot/lagun/lagun/
+cp lagun-mod/loadPackages.R build_chroot/lagun/lagun/
 cp lagun-mod/evaluateDOE.R build_chroot/lagun/lagun/modules/prepareDOE/
 [ -d build_chroot/vbmp ] || {
 	git clone --depth=1 https://gitlab.com/drti/vbmp.git
@@ -76,6 +78,7 @@ ttyd
 strace
 readline-dev
 lrzsz
+openssl-dev
 EOF
 [ -e lrzsz*apk ] || wget http://dl-cdn.alpinelinux.org/alpine/edge/testing/x86_64/lrzsz-0.12.20-r1.apk
 zcat lrzsz*apk | unshare -r tar xv -C build_chroot/

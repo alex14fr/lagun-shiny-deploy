@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eux
-make -C src install
+make -C src SSL=1 clean install
 [ -d R-@RVER@ ] || tar xf R-@RVER@.tar.gz
 cd R-@RVER@
 [ -f Makefile ] || ./configure --prefix=/opt/R --with-readline=yes --with-tcltk=yes --enable-java=no --enable-shared=no --with-ICU=no --disable-openmp --disable-nls --with-recommended-packages=yes

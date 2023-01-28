@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
  
 	if(unshare(CLONE_NEWUSER | CLONE_NEWNS | CLONE_NEWPID | /*CLONE_NEWIPC |*/ CLONE_NEWNET)<0) { perror("unshare"); }
 	if(fork()>0) { wait(NULL); exit(0); }
+	if(mount("proc","/proc","proc",0,NULL)<0) { perror("mount proc"); exit(1); }
 	fd=open("/proc/self/setgroups",O_WRONLY);
 	if(fd<0) { perror("open setgroups"); exit(1); }
 	if(write(3,"deny",4)<0) { perror("write setgroups"); exit(1); }
