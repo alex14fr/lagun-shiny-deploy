@@ -100,12 +100,24 @@ SSL_CTX *sslctx;
 #define MMBRP sin_port
 #endif
 
+void setnonblock(int fd) {
+	int flags;
+	flags=fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags & O_NONBLOCK);
+}
+
+void clearnonblock(int fd) {
+	int flags;
+	flags=fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+}
+
 int listen_sock(uint16_t port) {
 	STRCT addr;
 	int s=socket(FAM,SOCK_STREAM,0);
 	if(s<0) { perror("socket"); exit(1); }
 	setsockopt(s,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int));
-	fcntl(s,F_SETFL,O_NONBLOCK);
+	setnonblock(s);
 	addr.MMBRF=FAM;
 	addr.MMBRP=htons(port);
 	memset(&(addr.MMBRA), 0, sizeof(addr.MMBRA));
@@ -161,7 +173,7 @@ void remove_conn(struct conn *c) {
 
 void accept_new(int epollfd, int s) {
 	int cl_sock=accept(s, NULL, NULL);
-	fcntl(cl_sock,F_SETFL,O_NONBLOCK);
+	setnonblock(cl_sock);
 	if(cl_sock<0) { perror("accept"); return; }
 	struct conn *cc=malloc(sizeof(struct conn));
 	if(cc==NULL) { fprintf(stderr, "malloc() failed\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
@@ -593,15 +605,15 @@ int main(int argc, char **argv) {
 							continue;
 						}
 					} else { // read from local
-						if((nr=recv(cc->fd, buf, 4096, O_NONBLOCK))<=0) {
+						if((nr=recv(cc->fd, buf, 4096, MSG_DONTWAIT))<=0) {
 							if(nr<0) perror("recv");
 							destroy_conn(cc);
 							continue;
 						}
 					}
 #else
-					if((nr=recv(cc->fd, buf, 4096, O_NONBLOCK))<=0) {
-						//if(nr<0) perror("recv");
+					if((nr=recv(cc->fd, buf, 4096, MSG_DONTWAIT))<=0) {
+						if(nr<0) perror("recv");
 						destroy_conn(cc);
 						continue;
 					}
@@ -621,7 +633,7 @@ int main(int argc, char **argv) {
 					}
 #ifdef TLS
 					if(cc->other->ssl==NULL) { // write to local
-						if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
+						if((send(cc->other->fd, buf, nr, MSG_DONTWAIT))<0) {
 							perror("send");
 							destroy_conn(cc);
 							continue;
@@ -638,11 +650,15 @@ int main(int argc, char **argv) {
 						}
 					}
 #else
-					if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
-						//perror("send");
+					int rc;
+					clearnonblock(cc->other->fd);
+					if((rc=send(cc->other->fd, buf, nr, 0))<0) {
+						printf("rc=%d \n",rc);
+						perror("send");
 						destroy_conn(cc);
 						continue;
 					}
+					setnonblock(cc->other->fd);
 #endif
 				} 
 			}
