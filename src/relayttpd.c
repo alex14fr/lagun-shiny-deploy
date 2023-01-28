@@ -439,8 +439,8 @@ int main(int argc, char **argv) {
 	SSL_CTX_set_min_proto_version(sslctx, TLS1_2_VERSION);
 	SSL_CTX_set_options(sslctx, SSL_OP_CIPHER_SERVER_PREFERENCE|SSL_OP_PRIORITIZE_CHACHA);
 	SSL_CTX_set_cipher_list(sslctx, "HIGH");
-	if(SSL_CTX_use_certificate_file(sslctx, getenv("TLSCERT"), SSL_FILETYPE_PEM) != 1) {
-		printf("SSL_CTX_use_certificate_file error\n");
+	if(SSL_CTX_use_certificate_chain_file(sslctx, getenv("TLSCERT")) != 1) {
+		printf("SSL_CTX_use_certificate_chain_file error\n");
 		exit(1);
 	}
 	if(SSL_CTX_use_PrivateKey_file(sslctx, getenv("TLSKEY"), SSL_FILETYPE_PEM) != 1) {
