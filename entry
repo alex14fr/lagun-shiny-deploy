@@ -46,5 +46,11 @@ for d in /apps/* ; do
 	fi
 done
 cleanfiles &
-exec env -i /bin/relayttpd 8080 $args
+if [ -e /apps/cert ]; then
+	touch /apps/cert/off
+	exec env -i TLSCERT=/apps/cert/fullchain.pem TLSKEY=/apps/cert/privkey.pem /bin/relayttpdssl 4433 $args
+else
+	exec env -i /bin/relayttpd 8080 $args
+fi
+
 

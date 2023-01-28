@@ -5,10 +5,11 @@ lddep() {
 	cd - >/dev/null
 }
 set -eux
+rm -fr rootfs
 mkdir -p rootfs/apps
 cp entry* rootfs/
 cp -a apps rootfs/
-mkdir -p rootfs/bin rootfs/dev rootfs/sbin rootfs/proc rootfs/lib rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb
+mkdir -p rootfs/bin rootfs/sbin rootfs/proc rootfs/lib rootfs/tmp rootfs/usr rootfs/usr/bin rootfs/usr/sbin rootfs/usr/lib rootfs/usr/share rootfs/usr/share/X11 rootfs/usr/share/X11/xkb 
 cd build_chroot
 cp bin/relayttpd* bin/httpget bin/dropcap-inner bin/dropcap-outer ../rootfs/bin
 rm -fr lagun/lagun/renv* lagun/lagun/.Rprofile lagun/lagun/*~ lagun/documentation lagun/lagun/tests lagun/simulat* lagun/lagun/doc 
@@ -20,6 +21,7 @@ for i in doc help html examples data demo; do
 done
 rsync -a --exclude='*include*' --exclude='*LC_MESSAGES*' --exclude='*.map' --exclude='*R/lib/R/doc*' --exclude='*R/lib/R/share/*' --exclude='*R/share/*' $excl opt ../rootfs/
 cp -a bin ../rootfs/
+cp $(lddep /bin/busybox) ../rootfs/lib
 cd .. ; ./99_enter_rootfs /bin/busybox --install ; cd -
 ln -sf /bin/busybox ../rootfs/usr/bin/env
 cp -a usr/bin/Xvfb ../rootfs/bin/
@@ -43,9 +45,9 @@ done
 for l in libstdc++.so.6 libssl.so.3 libcrypto.so.3 libgcc_s.so.1 libexecinfo.so.1 libcairo.so.2 libgfortran.so.5 libquadmath.so.0 libgsl.so.27 libgslcblas.so.0 ; do
 	cp $(find . -name "$l"|head -n 1) ../rootfs/lib
 done
-cd ..
-./99_enter_rootfs chmod -R a+r .
-./99_enter_rootfs chmod -R a+x bin sbin usr/bin usr/sbin
-./99_enter_rootfs chmod -R a+w tmp 
-./99_enter_rootfs tar cv --numeric-owner / |xz -9c > rootfs.tar.xz
+cd ../rootfs
+chmod -R a+r .
+chmod -R o-w .
+chmod -R a+x bin sbin usr/bin usr/sbin
+chmod -R a+w tmp 
 
