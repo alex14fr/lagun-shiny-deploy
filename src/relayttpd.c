@@ -87,16 +87,30 @@ static int curevent; // event in ev queue currently processed
 SSL_CTX *sslctx;
 #endif
 
+#ifdef INET6
+#define FAM AF_INET6
+#define STRCT struct sockaddr_in6
+#define MMBRF sin6_family
+#define MMBRA sin6_addr
+#define MMBRP sin6_port
+#else
+#define FAM AF_INET
+#define STRCT struct sockaddr_in
+#define MMBRF sin_family
+#define MMBRA sin_addr
+#define MMBRP sin_port
+#endif
+
 int listen_sock(uint16_t port) {
-	struct sockaddr_in addr;
-	int s=socket(AF_INET,SOCK_STREAM,0);
+	STRCT addr;
+	int s=socket(FAM,SOCK_STREAM,0);
 	if(s<0) { perror("socket"); exit(1); }
 	setsockopt(s,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int));
 	fcntl(s,F_SETFL,O_NONBLOCK);
-	addr.sin_family=AF_INET;
-	addr.sin_port=htons(port);
-	addr.sin_addr.s_addr=htonl(INADDR_ANY);
-	if(bind(s,(struct sockaddr*)&addr,sizeof(struct sockaddr_in))<0) { perror("bind"); exit(1); }
+	addr.MMBRF=FAM;
+	addr.MMBRP=htons(port);
+	memset(&(addr.MMBRA), 0, sizeof(addr.MMBRA));
+	if(bind(s,(struct sockaddr*)&addr,sizeof(STRCT))<0) { perror("bind"); exit(1); }
 	if(listen(s,1)<0) { perror("listen"); exit(1); }
 	return(s);
 }
