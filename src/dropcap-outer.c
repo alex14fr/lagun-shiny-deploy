@@ -33,6 +33,10 @@
 #include <linux/capability.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 // create new NSes, hide /tmp and some /apps, exec after dropping all caps but CAP_SETFCAP (for uid-mapped nested user ns)
 
@@ -44,11 +48,18 @@ int main(int argc, char **argv) {
 	if(argc<2) { printf("Usage: %s prog\n", argv[0]); exit(1); }
  
 	if(unshare(CLONE_NEWUSER | CLONE_NEWNS | CLONE_NEWPID | /*CLONE_NEWIPC |*/ CLONE_NEWNET)<0) { perror("unshare"); }
+	int sock=socket(AF_INET,SOCK_STREAM,0);
+	struct ifreq ifr;
+	memcpy(ifr.ifr_name, "lo\0", 3);
+	ifr.ifr_flags=IFF_UP|IFF_LOOPBACK|IFF_RUNNING;
+	if(ioctl(sock, SIOCSIFFLAGS, &ifr)<0) { perror("ioctl"); }
+	close(sock);
 	if(fork()>0) { wait(NULL); exit(0); }
+	if(mount("proc","/proc","proc",0,NULL)<0) { perror("mount proc"); exit(1); }
 	fd=open("/proc/self/setgroups",O_WRONLY);
 	if(fd<0) { perror("open setgroups"); exit(1); }
 	if(write(3,"deny",4)<0) { perror("write setgroups"); exit(1); }
-	close(fd);
+	close(fd); 
 	snprintf(tmp, 256, "0 %d 1\n", origUid);
 	fd=open("/proc/self/uid_map",O_WRONLY);
 	if(fd<0) { perror("open uid_map"); exit(1); }

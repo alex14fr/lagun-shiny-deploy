@@ -186,11 +186,13 @@ void destroy_half_conn(struct conn *c) {
 	for(int i=curevent+1; i<nevents; i++)
 		if(events[i].data.ptr==c)
 			events[i].data.ptr=NULL;
+#ifdef TLS
 	if(c->ssl) {
 		SSL_shutdown(c->ssl);
 		SSL_free(c->ssl);
 		c->ssl=NULL;
 	}
+#endif
 	if(c->fd > 0) {
 		shutdown(c->fd, SHUT_RDWR);
 		close(c->fd);

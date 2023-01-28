@@ -35,6 +35,10 @@
 #include <sys/wait.h>
 #include <sys/random.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 // create new NSes, bind mount /tmp and /dev/pts to empty directories, and exec without any capability
 
@@ -43,13 +47,18 @@ int main(int argc, char **argv) {
 	if(argc<3) { printf("Usage: %s appname prog\n", argv[0]); exit(1); }
  
 	if(unshare(CLONE_NEWUSER | CLONE_NEWNS | CLONE_NEWPID | /*CLONE_NEWIPC |*/ CLONE_NEWNET)<0) { perror("unshare"); }
+	int sock=socket(AF_INET,SOCK_STREAM,0);
+	struct ifreq ifr;
+	memcpy(ifr.ifr_name, "lo\0", 3);
+	ifr.ifr_flags=IFF_UP|IFF_LOOPBACK|IFF_RUNNING;
+	if(ioctl(sock, SIOCSIFFLAGS, &ifr)<0) { perror("ioctl"); }
+	close(sock);
 	if(fork()>0) { wait(NULL); exit(0); }
-	/*
-	fd=open("/proc/self/setgroups",O_WRONLY);
+	if(mount("proc","/proc","proc",0,NULL)<0) { perror("mount proc"); exit(1); }
+	int fd=open("/proc/self/setgroups",O_WRONLY);
 	if(fd<0) { perror("open setgroups"); exit(1); }
 	if(write(3,"deny",4)<0) { perror("write setgroups"); exit(1); }
 	close(fd);
-   */
 	if(mount("none","/",NULL,MS_PRIVATE|MS_REC,NULL)<0) { perror("mount private /"); exit(1); }
 	chdir("/");
 	mkdir("/tmp",0777);
