@@ -1,6 +1,7 @@
 #!/bin/sh
 rm -fr rootfs/tmp/* rootfs/tmp/.* rootfs/dev/*
 mkdir rootfs/dev rootfs/dev/pts rootfs/etc
+chmod -R a+rwx rootfs/tmp
 for d in urandom random null full zero; do touch rootfs/dev/$d; done
 chmod -R a+rwx rootfs/dev/pts
 ln -s /dev/pts/ptmx rootfs/dev/ptmx
