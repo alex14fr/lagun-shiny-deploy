@@ -163,16 +163,6 @@ void accept_new(int epollfd, int s) {
 	cc->ssl=SSL_new(sslctx);
 	SSL_set_fd(cc->ssl, cl_sock);
 	SSL_set_accept_state(cc->ssl);
-	/*
-	int err, ret;
-	lp:
-	if((ret=SSL_do_handshake(cc->ssl))<0) {
-		err=SSL_get_error(cc->ssl, ret);
-		if(err==SSL_ERROR_WANT_READ || err==SSL_ERROR_WANT_WRITE) goto lp;
-		printf("SSL_do_handshake error %d\n", err);
-	}
-	*/
-	//printf("accepted ssl on fd %d\n", cl_sock);
 #endif
 	insert_conn(cc);
 }
@@ -358,9 +348,12 @@ void writefile(struct conn *c, int fd, int size) {
 #ifdef TLS
 	char buf[4096];
 	int nr, ret;
+	loop:
 	while((nr=read(fd, buf, 4096))>0) {
 		if((ret=SSL_write(c->ssl, buf, nr))<0) {
-			printf("SSL_write error %d\n", SSL_get_error(c->other->ssl, ret));
+			int err=SSL_get_error(c->ssl, ret);
+			if(err==SSL_ERROR_WANT_READ || err==SSL_ERROR_WANT_WRITE) goto loop;
+			printf("writefile() SSL_write error %d\n", err);
 			destroy_conn(c);
 		}
 	}
@@ -371,7 +364,14 @@ void writefile(struct conn *c, int fd, int size) {
 
 void writestr(struct conn *c, char *string) {
 #ifdef TLS
-	SSL_write(c->ssl, string, strlen(string));
+	int ret, err;
+	loop:
+	if((ret=SSL_write(c->ssl, string, strlen(string)))<0) {
+		int err=SSL_get_error(c->ssl, ret);
+		if(err==SSL_ERROR_WANT_READ || err==SSL_ERROR_WANT_WRITE) goto loop;
+		printf("writestr() SSL_write error %d\n", err);
+	}
+
 #else
 	write(c->fd, string, strlen(string));
 #endif
@@ -613,8 +613,11 @@ int main(int argc, char **argv) {
 						}
 					} else { // write to remote
 						int ret;
-						if((ret=SSL_write(cc->other->ssl, buf, nr)<0)) {
-							printf("SSL_write error %d\n", SSL_get_error(cc->other->ssl, ret));
+						loop:
+						if((ret=SSL_write(cc->other->ssl, buf, nr))<0) {
+							int err=SSL_get_error(cc->other->ssl, ret);
+							if(err==SSL_ERROR_WANT_READ || err==SSL_ERROR_WANT_WRITE) goto loop;
+							printf("SSL_write error %d\n", err);
 							destroy_conn(cc);
 							continue;
 						}
