@@ -101,9 +101,10 @@ SSL_CTX *sslctx;
 #endif
 
 void setnonblock(int fd) {
+//	fcntl(fd,F_SETFL,O_NONBLOCK);
 	int flags;
 	flags=fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, flags & O_NONBLOCK);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK); 
 }
 
 void clearnonblock(int fd) {
