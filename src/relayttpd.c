@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>
+#define _GNU_SOURCE
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
@@ -38,6 +39,9 @@
 #include <sys/timerfd.h>
 #include <sys/sendfile.h>
 #include <sys/wait.h>
+#ifdef TLS
+#include <openssl/ssl.h>
+#endif
 
 #define MAXEVENTS 10
 #define REQSZ 512
@@ -68,6 +72,9 @@ struct conn {
 	time_t created;
 	//time_t last_seen;
 	int sure_bind; // -1: local socket, remote sockets: 0: bind unsure/not done, 1: bind sure until next server answer, 2: bind always sure
+#ifdef TLS
+	SSL* ssl;
+#endif
 	struct conn *next;
 };
 
@@ -76,11 +83,16 @@ static struct epoll_event events[MAXEVENTS]; // global event queue
 static int nevents; // nr of events in ev queue 
 static int curevent; // event in ev queue currently processed
 
+#ifdef TLS
+SSL_CTX *sslctx;
+#endif
+
 int listen_sock(uint16_t port) {
 	struct sockaddr_in addr;
 	int s=socket(AF_INET,SOCK_STREAM,0);
 	if(s<0) { perror("socket"); exit(1); }
 	setsockopt(s,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int));
+	fcntl(s,F_SETFL,O_NONBLOCK);
 	addr.sin_family=AF_INET;
 	addr.sin_port=htons(port);
 	addr.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -136,6 +148,7 @@ void remove_conn(struct conn *c) {
 
 void accept_new(int epollfd, int s) {
 	int cl_sock=accept(s, NULL, NULL);
+	fcntl(cl_sock,F_SETFL,O_NONBLOCK);
 	if(cl_sock<0) { perror("accept"); return; }
 	struct conn *cc=malloc(sizeof(struct conn));
 	if(cc==NULL) { fprintf(stderr, "malloc() failed\n"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
@@ -146,6 +159,21 @@ void accept_new(int epollfd, int s) {
 	ev.events=EPOLLMASK;
 	ev.data.ptr=(void*)cc;
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, cl_sock, &ev)<0) { perror("epoll_ctl"); close(cl_sock); shutdown(cl_sock, SHUT_RDWR); return; }
+#ifdef TLS
+	cc->ssl=SSL_new(sslctx);
+	SSL_set_fd(cc->ssl, cl_sock);
+	SSL_set_accept_state(cc->ssl);
+	/*
+	int err, ret;
+	lp:
+	if((ret=SSL_do_handshake(cc->ssl))<0) {
+		err=SSL_get_error(cc->ssl, ret);
+		if(err==SSL_ERROR_WANT_READ || err==SSL_ERROR_WANT_WRITE) goto lp;
+		printf("SSL_do_handshake error %d\n", err);
+	}
+	*/
+	//printf("accepted ssl on fd %d\n", cl_sock);
+#endif
 	insert_conn(cc);
 }
 
@@ -155,6 +183,11 @@ void destroy_half_conn(struct conn *c) {
 	for(int i=curevent+1; i<nevents; i++)
 		if(events[i].data.ptr==c)
 			events[i].data.ptr=NULL;
+	if(c->ssl) {
+		SSL_shutdown(c->ssl);
+		SSL_free(c->ssl);
+		c->ssl=NULL;
+	}
 	if(c->fd > 0) {
 		shutdown(c->fd, SHUT_RDWR);
 		close(c->fd);
@@ -216,32 +249,6 @@ int try_parse_appname(struct conn* c, char *appname, char *translated_req, int *
 	return(0);
 }
 
-int try_serve_cache(struct conn *c, char *appname, char *translated_req, int translated_req_len) {
-	// 0->cache HIT
-	// -1->cache MISS
-	if(translated_req_len<6) return(-1);
-	if(memcmp(translated_req,"GET /",5)==0 && isspc(translated_req[5])) {
-		char buf[256];
-		snprintf(buf, 256, "/tmp/cache/%s.html.gz", appname);
-		struct stat sbuf;
-		//printf("translated_req\n");write(STDERR_FILENO,translated_req,translated_req_len);
-		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0 && \
-					memmem(translated_req,translated_req_len,"gzip",4)!=NULL) {
-			int fd=open(buf,O_RDONLY);
-			sendfile(c->fd, fd, 0, sbuf.st_size);
-			close(fd);
-			return(0);
-		}
-		snprintf(buf, 256, "/tmp/cache/%s.html", appname);
-		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0) {
-			int fd=open(buf,O_RDONLY);
-			sendfile(c->fd, fd, 0, sbuf.st_size);
-			close(fd);
-			return(0);
-		}
-	}
-	return(-1);
-}
 
 int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int epollfd) {
 	if(c->sure_bind!=0) return(0);
@@ -259,6 +266,9 @@ int bind_localsock(struct conn *c, char *appname, char *local_socket_path, int e
 		c->other->other=c;
 		c->other->created= /* c->other->last_seen=*/ time(NULL);
 		c->other->sure_bind=-1;
+#ifdef TLS
+		c->other->ssl=NULL;
+#endif
 		insert_conn(c->other);
 	}
 	c->other->fd=-1;
@@ -335,11 +345,95 @@ void garbage_collect(void) {
 #endif
 }
 
+void readall(struct conn *c) {
+	char buf[4096];
+#ifdef TLS
+	while(SSL_read(c->ssl, buf, 4096)>0);
+#else
+	while(recv(c->fd, buf, 4096, MSG_DONTWAIT)>0);
+#endif
+}
+
+void writefile(struct conn *c, int fd, int size) {
+#ifdef TLS
+	char buf[4096];
+	int nr, ret;
+	while((nr=read(fd, buf, 4096))>0) {
+		if((ret=SSL_write(c->ssl, buf, nr))<0) {
+			printf("SSL_write error %d\n", SSL_get_error(c->other->ssl, ret));
+			destroy_conn(c);
+		}
+	}
+#else
+	sendfile(c->fd, fd, 0, size);
+#endif
+}
+
+void writestr(struct conn *c, char *string) {
+#ifdef TLS
+	SSL_write(c->ssl, string, strlen(string));
+#else
+	write(c->fd, string, strlen(string));
+#endif
+}
+
+int try_serve_cache(struct conn *c, char *appname, char *translated_req, int translated_req_len) {
+	// 0->cache HIT
+	// -1->cache MISS
+	if(translated_req_len<6) return(-1);
+	if(memcmp(translated_req,"GET /",5)==0 && isspc(translated_req[5])) {
+		char buf[256];
+		snprintf(buf, 256, "/tmp/cache/%s.html.gz", appname);
+		struct stat sbuf;
+		//printf("translated_req\n");write(STDERR_FILENO,translated_req,translated_req_len);
+		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0 && \
+					memmem(translated_req,translated_req_len,"gzip",4)!=NULL) {
+			int fd=open(buf,O_RDONLY);
+			snprintf(buf, 256, "HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-encoding: gzip\r\nContent-length: %ld\r\n\r\n", sbuf.st_size);
+			writestr(c, buf);
+			writefile(c, fd, sbuf.st_size);
+			close(fd);
+			return(0);
+		}
+		snprintf(buf, 256, "/tmp/cache/%s.html", appname);
+		if(stat(buf,&sbuf)==0 && sbuf.st_size>1 && access(buf,R_OK)==0) {
+			int fd=open(buf,O_RDONLY);
+			snprintf(buf, 256, "HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-length: %ld\r\n\r\n", sbuf.st_size);
+			writestr(c, buf);
+			writefile(c, fd, sbuf.st_size);
+			close(fd);
+			return(0);
+		}
+	}
+	return(-1);
+}
 int main(int argc, char **argv) {
+#ifdef TLS
+	if(argc<2 || !getenv("TLSCERT") || !getenv("TLSKEY")) {
+		fprintf(stderr, "Usage: TLSCERT=<cert_pem> TLSKEY=<key_pem> %s <port> [<app_name>:<app_local_socket> [...]]\n", argv[0]);
+		exit(1);
+	}
+#else
 	if(argc<2) {
 		fprintf(stderr, "Usage: %s <port> [<app_name>:<app_local_socket> [...]]\n", argv[0]);
 		exit(1);
 	}
+#endif
+
+#ifdef TLS
+	sslctx=SSL_CTX_new(TLS_server_method());
+	SSL_CTX_set_min_proto_version(sslctx, TLS1_2_VERSION);
+	SSL_CTX_set_options(sslctx, SSL_OP_CIPHER_SERVER_PREFERENCE|SSL_OP_PRIORITIZE_CHACHA);
+	SSL_CTX_set_cipher_list(sslctx, "HIGH");
+	if(SSL_CTX_use_certificate_file(sslctx, getenv("TLSCERT"), SSL_FILETYPE_PEM) != 1) {
+		printf("SSL_CTX_use_certificate_file error\n");
+		exit(1);
+	}
+	if(SSL_CTX_use_PrivateKey_file(sslctx, getenv("TLSKEY"), SSL_FILETYPE_PEM) != 1) {
+		printf("SSL_CTX_use_PrivateKey_file error\n");
+		exit(1);
+	}
+#endif
 	int s=listen_sock((uint16_t)atoi(argv[1]));
 	struct epoll_event ev;
 	int epollfd=epoll_create(1);
@@ -390,15 +484,27 @@ int main(int argc, char **argv) {
 				int nr, rc, translated_req_length;
 				if(cc->sure_bind==0) {
 					// read from remote, not bound (or unsure) to local socket
+#ifdef TLS
+					if((nr=SSL_read(cc->ssl, cc->req+cc->reqsz, REQSZ-cc->reqsz))<=0) {
+						int err=SSL_get_error(cc->ssl, nr);
+						if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
+							printf("SSL_read error %d\n", err);
+							destroy_conn(cc);
+						}
+						continue;
+					}
+					//printf("cc->req : %s\n", cc->req);
+#else
 					if((nr=recv(cc->fd, cc->req+cc->reqsz, REQSZ-cc->reqsz, MSG_DONTWAIT))<=0) {
 						perror("recv");
 						destroy_conn(cc);
 						continue;
 					}
+#endif
 					cc->reqsz+=nr;
 					rc=try_parse_appname(cc, appname, translated_req, &translated_req_length);
 					if(rc==-2) {
-						write(cc->fd, ERRMSG, strlen(ERRMSG));
+						writestr(cc, ERRMSG);
 						destroy_conn(cc);
 					//	fprintf(stderr, "Bad request\n");
 						continue;
@@ -406,21 +512,21 @@ int main(int argc, char **argv) {
 						cc->reqsz=0;
 						bzero(cc->req, REQSZ);
 						if(try_serve_cache(cc, appname, translated_req, translated_req_length)==0) {
-							while(recv(cc->fd, buf, 4096, MSG_DONTWAIT)>0);
+							readall(cc);
 							continue;
 						} else if(strlen(appname)==0) {
-							while(recv(cc->fd, buf, 4096, MSG_DONTWAIT)>0);
+							readall(cc);
 							if(access(HOME,R_OK)!=0) {
 								char page[]="HTTP/1.1 200\r\nContent-length: 4\r\n\r\nHome";
-								write(cc->fd, page, strlen(page));
+								writestr(cc, page);
 							} else {
 								struct stat stbuf;
 								stat(HOME,&stbuf);
 								char buf[256];
-								int ww=snprintf(buf,256,"HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-length: %d\r\n\r\n", (int)stbuf.st_size);
-								write(cc->fd, buf, ww);
+								snprintf(buf,256,"HTTP/1.1 200\r\nContent-type: text/html;charset=utf8\r\nContent-length: %d\r\n\r\n", (int)stbuf.st_size);
+								writestr(cc, buf);
 								int fd=open(HOME, O_RDONLY);
-								sendfile(cc->fd, fd, 0, stbuf.st_size);
+								writefile(cc, fd, stbuf.st_size);
 								close(fd);
 								continue;
 							}
@@ -428,25 +534,29 @@ int main(int argc, char **argv) {
 						} else {
 							rc=search_bind_localsock(cc, appname, argc, argv, epollfd);
 							if(rc==-2) {
-								while(recv(cc->fd, buf, 4096, MSG_DONTWAIT)>0);
+								readall(cc);
 							//	fprintf(stderr, "Not found\n");
-								write(cc->fd, NOTFOUNDMSG, strlen(NOTFOUNDMSG));
+								writestr(cc, NOTFOUNDMSG);
 								continue;
 							} if(rc==-1) {
-								while(recv(cc->fd, buf, 4096, MSG_DONTWAIT)>0);
-								write(cc->fd, BOOMSG, strlen(BOOMSG));
+								readall(cc);
+								writestr(cc, BOOMSG);
 								destroy_conn(cc);
 							} else {
 								if(write(cc->other->fd, translated_req, translated_req_length)<0) {
 						//			perror("write translated_req");
 									err:
-									write(cc->fd, BOOMSG, strlen(BOOMSG));
+									writestr(cc, BOOMSG);
 									destroy_conn(cc);
 									continue;
 								}
+#ifdef TLS
+								while((nr=SSL_read(cc->ssl, buf, 4096))>0) {
+#else
 								while((nr=recv(cc->fd, buf, 4096, MSG_DONTWAIT))>0) {
+#endif
 									if(write(cc->other->fd, buf, nr)<0) {
-						//				perror("write");
+										perror("write");
 										goto err;
 									}
 								}
@@ -456,11 +566,31 @@ int main(int argc, char **argv) {
 				} else {
 					// read from local or remote-bound
 					assert(cc->other!=NULL);
+					if(cc->other==NULL) { printf("other is NULL, continue\n"); continue; }
+#ifdef TLS
+					if(cc->ssl) { // read from remote
+						if((nr=SSL_read(cc->ssl, buf, 4096))<=0) {
+							int err=SSL_get_error(cc->ssl, nr);
+							if((err!=SSL_ERROR_WANT_READ)&&(err!=SSL_ERROR_WANT_WRITE)) {
+								printf("SSL_read_error %d\n", err);
+								destroy_conn(cc);
+								continue;
+							}
+						}
+					} else { // read from local
+						if((nr=recv(cc->fd, buf, 4096, O_NONBLOCK))<=0) {
+							if(nr<0) perror("recv");
+							destroy_conn(cc);
+							continue;
+						}
+					}
+#else
 					if((nr=recv(cc->fd, buf, 4096, O_NONBLOCK))<=0) {
 						//if(nr<0) perror("recv");
 						destroy_conn(cc);
 						continue;
 					}
+#endif
 					if(cc->sure_bind==-1) {
 						// read from local, watch for switching protocol
 						if(cc->other->sure_bind!=2) {
@@ -474,10 +604,27 @@ int main(int argc, char **argv) {
 							cc->other->sure_bind=0; 
 						}
 					}
+#ifdef TLS
+					if(cc->other->ssl==NULL) { // write to local
+						if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
+							perror("send");
+							destroy_conn(cc);
+							continue;
+						}
+					} else { // write to remote
+						int ret;
+						if((ret=SSL_write(cc->other->ssl, buf, nr)<0)) {
+							printf("SSL_write error %d\n", SSL_get_error(cc->other->ssl, ret));
+							destroy_conn(cc);
+							continue;
+						}
+					}
+#else
 					if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
 						//perror("send");
 						destroy_conn(cc);
 					}
+#endif
 				} 
 			}
 		}

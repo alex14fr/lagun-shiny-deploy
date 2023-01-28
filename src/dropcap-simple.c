@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	char tmp[256];
 	if(argc<3) { printf("Usage: %s appname prog\n", argv[0]); exit(1); }
  
-	if(unshare(CLONE_NEWUSER | CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWIPC | CLONE_NEWNET)<0) { perror("unshare"); }
+	if(unshare(CLONE_NEWUSER | CLONE_NEWNS | CLONE_NEWPID | /*CLONE_NEWIPC |*/ CLONE_NEWNET)<0) { perror("unshare"); }
 	if(fork()>0) { wait(NULL); exit(0); }
 	/*
 	fd=open("/proc/self/setgroups",O_WRONLY);
