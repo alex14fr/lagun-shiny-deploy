@@ -542,6 +542,7 @@ int main(int argc, char **argv) {
 								readall(cc);
 								writestr(cc, BOOMSG);
 								destroy_conn(cc);
+								continue;
 							} else {
 								if(write(cc->other->fd, translated_req, translated_req_length)<0) {
 						//			perror("write translated_req");
@@ -566,7 +567,6 @@ int main(int argc, char **argv) {
 				} else {
 					// read from local or remote-bound
 					assert(cc->other!=NULL);
-					if(cc->other==NULL) { printf("other is NULL, continue\n"); continue; }
 #ifdef TLS
 					if(cc->ssl) { // read from remote
 						if((nr=SSL_read(cc->ssl, buf, 4096))<=0) {
@@ -574,8 +574,8 @@ int main(int argc, char **argv) {
 							if((err!=SSL_ERROR_WANT_READ)&&(err!=SSL_ERROR_WANT_WRITE)) {
 								printf("SSL_read_error %d\n", err);
 								destroy_conn(cc);
-								continue;
 							}
+							continue;
 						}
 					} else { // read from local
 						if((nr=recv(cc->fd, buf, 4096, O_NONBLOCK))<=0) {
@@ -626,6 +626,7 @@ int main(int argc, char **argv) {
 					if((send(cc->other->fd, buf, nr, O_NONBLOCK))<0) {
 						//perror("send");
 						destroy_conn(cc);
+						continue;
 					}
 #endif
 				} 

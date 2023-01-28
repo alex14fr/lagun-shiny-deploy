@@ -1,0 +1,3 @@
+#!/bin/sh
+set -x
+cc -Wall -DTLS -std=c99 -o relayttpd relayttpd.c  -lssl -lcrypto
