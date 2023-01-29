@@ -8,8 +8,6 @@ The following changes are applied :
 
 - don't use renv; all dependencies are at their latest version on CRAN
 
-- send keepalive messages on the websocket every 140 s
-
 - replace fOptions package for quasi-random sequences
 
 See files in the lagun-mod directory.
@@ -67,11 +65,17 @@ by leaving a file named "no_home_cache" in the app directory.
 RUN ON YOUR PREMISES (Linux/x86_64 only)
 
 One option is to download the prebuilt x86_64 rootfs file at
-<https://janona.perso.math.cnrs.fr/shiny-rootfs.tar.xz>, then
+<https://janona.perso.math.cnrs.fr/shiny-rootfs-230128.tar.xz>, then
 
  $ mkdir rootfs
  $ tar xf shiny-rootfs.tar.xz -C rootfs
  $ ./99_enter_pivotroot /entry
+
+By default the server listens on all adresses, port 8080.
+
+Note that you should set permissions correctly. For instance, run as a user
+which doesn't own the files in the rootfs directory (see 99_enter_pivotroot_su
+to run as a "nobody2" user).
 
 Alternatively, there is an OCI runtime config.json
 <https://specs.opencontainers.org/runtime-spec/config/> to run from the
@@ -102,6 +106,13 @@ usual utilities (including unshare(1)), wget, git, rsync.
 
 R configure flags are defined in x02_buildR, you may want to review and change
 them if you want to use a specific BLAS or enable OpenMP for multithreading.
+
+RUN WITH TLS SUPPORT
+
+Create the rootfs/apps/cert directory, put your certificate chain and private
+key in it as fullchain.pem and privkey.pem in it, set them as readable by the
+container user. Then it will run the HTTP frontend with TLS listening on the
+4433 port.
 
 
 Main source repository: <https://github.com/alex14fr/lagun-shiny-deploy>
